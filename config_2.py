@@ -1,3 +1,5 @@
+# this is season 2 
+
 ground_elem = ['Ocean','Inferno','Wind','Mountain']
 elements = ['Light','Shadow','Ocean','Inferno','Wind','Summoner','Electric',#6
     'Assasin','Blademaster','Mage','Warden','Mystic','Predator','Crystal',#13
@@ -430,4 +432,7 @@ synergy_info = dict(
         description='moving'),
     Avatar=dict(rate=[1],effect=[1.0],
         description='one more time')
+    )
+items_info = dict(
+    deathblade=dict(points=[0,0],)
     )

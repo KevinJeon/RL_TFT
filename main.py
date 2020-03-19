@@ -1,5 +1,5 @@
 from env import TFT_env
-import config as cfg
+import config_2 as cfg
 import numpy as np
 def main():
     keys = dict()

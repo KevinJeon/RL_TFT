@@ -1,4 +1,4 @@
-import config as cfg
+import config_3 as cfg
 import numpy as np
 # env
 '''
@@ -12,7 +12,7 @@ to do
     3-1. 시너지 묶기 함수화 - done
 4. 시너지
     4-1. 시너지 설명 및 수치 추가 - done
-    4-2. 시너지 함수 필요
+    4-2. 시너지 함수 필요 - 나중에 구현 후 해야할
 3. item 할당과 속성만, 융합은 x
 4. item 융합 포함
 5. simple skill(단순 거리, 데미지)
@@ -28,7 +28,8 @@ to do
 
 class TFT_env(object):
     def __init__(self,elements,champ_state_info,champ_cost_info,champ_level_info,
-        champ_distribution,sushi_distribution,ground_elem,synergy_info,agent=None):
+        champ_distribution,sushi_distribution,ground_elem,synergy_info,agent=None,
+        **kwargs):
         '''
         action space :
         act1 = player's act before fight
