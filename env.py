@@ -12,17 +12,19 @@ to do
     3-1. 시너지 묶기 함수화 - done
 4. 시너지
     4-1. 시너지 설명 및 수치 추가 - done
-    4-2. 시너지 함수 필요 - 나중에 구현 후 해야할
+    4-2. 시너지 함수 필요 - 나중에 구현 후 해야할 것
 3. item 할당과 속성만, 융합은 x
+    3-1. item 속성 완료
+    3-2. item 함수
 4. item 융합 포함
 5. simple skill(단순 거리, 데미지)
 6. skill 복잡 스킬 구현
 7. fight
     7-1. 몹 라운드
 --to fix--
-2. 3성 만들면, 스시에도 빠지는 것
-3. diana level info 넣기 - done
-4. 초반 금액 상승폭 수정 필요
+1. 3성 만들면, 스시에도 빠지는 것
+2. 아이템 개인 할당 방법
+3. 초반 금액 상승폭 수정 필요
 '''
 
 class TFT_env(object):
@@ -106,7 +108,7 @@ class TFT_env(object):
             champs = list(np.random.choice(len(n_champs[1]),star,replace=False))
             self.sushi += [n_champs[1][c] for c in champs]
         my_order = np.random.choice(8,1)[0]
-        item = 'item'
+        item = np.random.choice(8,1)[0]
         self._champ_append(self.sushi[my_order]+'_1',item)
         print('sushi finished your champ is {}'.format(self.sushi[my_order]))
     def _champ_queue(self):
@@ -168,9 +170,11 @@ class TFT_env(object):
         # 임시
         n = int(self.cur_round[0])
         return np.random.choice([True,False]),np.random.randint(2*n,8*n)
-    def _champ_append(self,champ,item):
+    def _champ_append(self,champ,item=None):
         if champ in self.total_units.keys():
             self.total_units[champ]['count'] += 1
+            if item:
+                self.total_units[champ]['items'].append(item)
             if self.total_units[champ]['count'] == 3:
                 levup = int(champ[-1]) + 1
                 levup_champ = champ[:-1] + str(levup)
@@ -186,7 +190,12 @@ class TFT_env(object):
                     info[k] = i*1.8**(int(level)-1)
                 else:
                     info[k] = i
-            self.total_units[champ] = dict(count=1,synergy=synergy,info=info,items=None)
+            if item:
+                self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
+                    items=[item])
+            else:
+                self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
+                    items=[])
             if level == '3':
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
@@ -217,7 +226,7 @@ class TFT_env(object):
             self.total_units[champ]['count'] -= 1
             if self.total_units[champ]['count'] == 0:
                 if self.total_units[champ]['items']:
-                    self.items[0] += self.total_units[champ]['items']
+                    self.items += self.total_units[champ]['items']
                 del self.total_units[champ]
             self.is_prepared = False
         elif act1 == 7:
