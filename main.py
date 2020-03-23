@@ -1,5 +1,5 @@
 from env import TFT_env
-import config_2 as cfg
+import config_3 as cfg
 import numpy as np
 def main():
     keys = dict()
@@ -33,5 +33,7 @@ def main():
         if env.cur_round[0] == '6':
             print('win!!!!!!!!')
             break
+    for u,i in env.total_units.items():
+        print(u,i)
 if __name__ == '__main__':
     main()

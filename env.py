@@ -20,7 +20,6 @@ to do
 7. fight
     7-1. 몹 라운드
 --to fix--
-1. 럭스 파는 가격 현재 7로 고정 - done
 2. 3성 만들면, 스시에도 빠지는 것
 3. diana level info 넣기 - done
 4. 초반 금액 상승폭 수정 필요
@@ -28,7 +27,7 @@ to do
 
 class TFT_env(object):
     def __init__(self,elements,champ_state_info,champ_cost_info,champ_level_info,
-        champ_distribution,sushi_distribution,ground_elem,synergy_info,agent=None,
+        champ_distribution,sushi_distribution,synergy_info,agent=None,
         **kwargs):
         '''
         action space :
@@ -47,7 +46,6 @@ class TFT_env(object):
         self.champ_cost_info = champ_cost_info
         self.champ_level_info = champ_level_info
         self.cur_round = '1-1'
-        self.ground = ground_elem[np.random.choice(4,1)[0]]
         self.synergy_info = synergy_info
         # player
         self.need_xp = [2,4,8,14,24,44,76,126,192]
@@ -93,12 +91,11 @@ class TFT_env(object):
         self._sushi()
         msg = ('-----------------------\n'+\
             'Hi, Welcome to League of Legends TFT\n'+\
-            'Game ground : {}\n'+\
             'Life : {}\n'+\
             'Player level : {}\n'+\
             'Money : {}\n'+\
             '# of Champ : {}\n'+\
-            '-----------------------').format(self.ground,self.life,self.player_level,
+            '-----------------------').format(self.life,self.player_level,
                 self.money,len(self.total_units))
         print(msg)
     def _sushi(self):
@@ -109,7 +106,8 @@ class TFT_env(object):
             champs = list(np.random.choice(len(n_champs[1]),star,replace=False))
             self.sushi += [n_champs[1][c] for c in champs]
         my_order = np.random.choice(8,1)[0]
-        self._champ_append(self.sushi[my_order]+'_1')
+        item = 'item'
+        self._champ_append(self.sushi[my_order]+'_1',item)
         print('sushi finished your champ is {}'.format(self.sushi[my_order]))
     def _champ_queue(self):
         self.five_champs,self.five_cost = [],[]
@@ -124,8 +122,6 @@ class TFT_env(object):
         cost_info = np.array([1,3,5])
         level = int(champ[-1])
         champ = champ[:-2]
-        if champ == 'lux':
-            return 7
         for (star,champs) in self.champ_cost_info.items():
             if champ in champs:
                 return cost_info[level]
@@ -172,29 +168,26 @@ class TFT_env(object):
         # 임시
         n = int(self.cur_round[0])
         return np.random.choice([True,False]),np.random.randint(2*n,8*n)
-    def _champ_append(self,champ):
+    def _champ_append(self,champ,item):
         if champ in self.total_units.keys():
             self.total_units[champ]['count'] += 1
             if self.total_units[champ]['count'] == 3:
                 levup = int(champ[-1]) + 1
                 levup_champ = champ[:-1] + str(levup)
-                self._champ_append(levup_champ)
+                self._champ_append(levup_champ,item)
                 del self.total_units[champ]
         else:
             synergy = self.champ_state_info[champ[:-2]]['elem']
-            if champ == 'qiyana':
-                synergy += [self.ground]
-            elif champ == 'lux':
-                print('lux!')
-                elem = ['Woodland','Light','Ocean','Shadow','Inferno',
-                    'Glacial','Mountain','Wind']
-                synergy += elem[np.random.choice(range(len(elem)),1)[0]]*2
             infos = self.champ_level_info[champ[:-2]].items()
             info = dict()
+            level = champ[-1]
             for k,i in infos:
-                info[k] = i[int(champ[-1])-1]
-            self.total_units[champ] = dict(count=1,synergy=synergy,info=info)
-            if champ[-1] == '3':
+                if (k == 'health') or (k=='attack_damage') or (k=='dps'):
+                    info[k] = i*1.8**(int(level)-1)
+                else:
+                    info[k] = i
+            self.total_units[champ] = dict(count=1,synergy=synergy,info=info,items=None)
+            if level == '3':
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
                         if c[0] in self.removal.keys():
@@ -212,7 +205,7 @@ class TFT_env(object):
         if act1 <= 4:
             cost = self._cost(self.five_champs[act1]+'_1')
             self.money -= cost
-            self._champ_append(self.five_champs[act1]+'_1')
+            self._champ_append(self.five_champs[act1]+'_1',None)
             self.five_champs[act1] = False
             self.is_prepared = False
         elif act1 == 5:
@@ -222,6 +215,10 @@ class TFT_env(object):
             champ = list(self.total_units.keys())[ind]
             self.money += self._cost(champ)
             self.total_units[champ]['count'] -= 1
+            if self.total_units[champ]['count'] == 0:
+                if self.total_units[champ]['items']:
+                    self.items[0] += self.total_units[champ]['items']
+                del self.total_units[champ]
             self.is_prepared = False
         elif act1 == 7:
             self.money -= 2
