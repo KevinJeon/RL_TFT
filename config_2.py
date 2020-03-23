@@ -1,5 +1,9 @@
+<<<<<<< HEAD:config_2.py
 # this is season 2 
 
+=======
+# for TFT set 2
+>>>>>>> 0caca97df31e160f85756f260a77f21c0dc40588:config_2.py
 ground_elem = ['Ocean','Inferno','Wind','Mountain']
 elements = ['Light','Shadow','Ocean','Inferno','Wind','Summoner','Electric',#6
     'Assasin','Blademaster','Mage','Warden','Mystic','Predator','Crystal',#13
