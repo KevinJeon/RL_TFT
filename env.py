@@ -24,7 +24,8 @@ to do
 --to fix--
 1. 3성 만들면, 스시에도 빠지는 것
 2. 아이템 개인 할당 방법
-3. 초반 금액 상승폭 수정 필요
+3. 초반 금액 상승폭 수정 필요 - done
+4. 골드 지급은 라운드 시작 시 지급 - done
 '''
 
 class TFT_env(object):
@@ -77,7 +78,7 @@ class TFT_env(object):
                 sub_round = 1
             else:
                 sub_round += 1
-        self.cur_round = '{}_{}'.format(big_round,sub_round)
+        self.cur_round = '{}-{}'.format(big_round,sub_round)
 
     def _init_game(self):
         # init game
@@ -131,11 +132,18 @@ class TFT_env(object):
     def _money(self):
         '''
         money rule
-        1. base : 5
+        1. 1-4?
         2. interset : 10골드 당 1원 max 5
         3. continuous : 2~3  - +1 4~6 - +2 7~ - +3
         '''
-        self.money += 5
+        if self.cur_round in ['1-2','1-3','2-1','2-2']:
+            self.money += 2
+            if self.cur_round[0] == '2':
+                self.money += 1
+                if self.cur_round[-1] == '2':
+                    self.money += 1
+        else:
+            self.money += 5
         if self.money > 50:
             self.money += 5
         else:
@@ -256,6 +264,9 @@ class TFT_env(object):
             if not self.is_prepared:
                 return self.money,self.life,self.xp,self.total_units
             else:
+                self._money()
+                self.xp += 2
+                self._player_levelup()
                 self._rearrange()
                 self._update_synergy()
                 result,life_change = self._fight()
@@ -283,10 +294,6 @@ class TFT_env(object):
             '-----------------------').format(self.cur_round,result,self.life,self.player_level,
                 self.money,self.total_units.keys(),self.continuous,self.player_synergy)
         print(msg)
-        self._money()
-        self.xp += 2
-        self._player_levelup()
-        self._money()
         self._champ_queue()
         self._round()
         return self.money,self.life,self.xp,self.total_units
