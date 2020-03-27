@@ -14,16 +14,17 @@ to do
     4-1. 시너지 설명 및 수치 추가 - done
     4-2. 시너지 함수 필요 - 나중에 구현 후 해야할 것
 3. item 할당과 속성만, 융합은 x
-    3-1. item 속성 완료
-    3-2. item 함수
-4. item 융합 포함
+    3-1. item 할당만 - done
+    3-2. random 하게 fight에 올리고 synergy fight unit에 맞게 적용
+    3-3. item 네이밍 함수, item 융합 함수
+4. item 어빌리티 적용
 5. simple skill(단순 거리, 데미지)
 6. skill 복잡 스킬 구현
 7. fight
     7-1. 몹 라운드
 --to fix--
-1. 3성 만들면, 스시에도 빠지는 것
-2. 아이템 개인 할당 방법
+1. 3성 만들면, 스시에도 빠지는 것 - done
+2. 아이템 개인 할당 방법 - done
 3. 초반 금액 상승폭 수정 필요 - done
 4. 골드 지급은 라운드 시작 시 지급 - done
 '''
@@ -54,8 +55,10 @@ class TFT_env(object):
         self.need_xp = [2,4,8,14,24,44,76,126,192]
         # units
         self.total_units = dict()
-        self.removal = dict() # already level 3 unit
+        self.removal = dict(c1=[],c2=[],c3=[],c4=[],c5=[]) # already level 3 unit
         self.fight_units = [] # fore rearrange
+        self.fight_synergy = []
+        self.fight_items = []
         self.wait_units = []
         # about sushi,reroll
         self.sushi_distribution = sushi_distribution
@@ -109,16 +112,19 @@ class TFT_env(object):
             champs = list(np.random.choice(len(n_champs[1]),star,replace=False))
             self.sushi += [n_champs[1][c] for c in champs]
         my_order = np.random.choice(8,1)[0]
-        item = np.random.choice(8,1)[0]
+        item = list(np.random.choice(8,1))
         self._champ_append(self.sushi[my_order]+'_1',item)
         print('sushi finished your champ is {}'.format(self.sushi[my_order]))
     def _champ_queue(self):
         self.five_champs,self.five_cost = [],[]
         stars = np.bincount(np.random.choice(5,size=5,
             p=self.champ_distribution['l'+str(self.player_level)]))
-        for star,n_champs in zip(stars,self.champ_cost_info.items()):
-            champs = np.random.choice(len(n_champs[1]),size=star)
-            self.five_champs += [n_champs[1][c] for c in champs]
+        for remove,star,n_champs in zip(self.removal.items(),stars,self.champ_cost_info.items()):
+            n_champs = n_champs[1]
+            for r in remove[1]:
+                n_champs = n_champs.remove(r)
+            champs = np.random.choice(len(n_champs),size=star)
+            self.five_champs += [n_champs[c] for c in champs]
         self.five_cost += [self._cost(c+'_1') for c in self.five_champs]
         msg = 'champ queue make!\n{}'.format(self.five_champs)
     def _cost(self,champ):
@@ -136,9 +142,9 @@ class TFT_env(object):
         2. interset : 10골드 당 1원 max 5
         3. continuous : 2~3  - +1 4~6 - +2 7~ - +3
         '''
-        if self.cur_round in ['1-2','1-3','2-1','2-2']:
+        if self.cur_round in ['1-2','1-3','1-4','2-1','2-2']:
             self.money += 2
-            if self.cur_round[0] == '2':
+            if (self.cur_round[0] == '2') or (self.cur_round[-1] == '4'):
                 self.money += 1
                 if self.cur_round[-1] == '2':
                     self.money += 1
@@ -148,27 +154,28 @@ class TFT_env(object):
             self.money += 5
         else:
             self.money += self.money // 10
-        if abs(self.continuous) >= 7:
+        if abs(self.continuous) >= 4:
             self.money += 3
-        elif abs(self.continuous) >= 4:
+        elif abs(self.continuous) >= 3:
             self.money += 2
         elif abs(self.continuous) >= 2:
             self.money += 1
     def _update_synergy(self):
         '''
-        for total units, not fight units
+        for fight units
         '''
         syn_list = []
         used = []
         self.player_synergy = []
-        for k,i in self.total_units.items():
-            if k[:-2] not in used:
-                syn_list += i['synergy']
-                used.append(k[:-2])
+        for syns,unit in zip(self.fight_synergy,self.fight_units):
+            if unit[:-4] not in used:
+                syn_list += syns
+                used.append(unit[:-4])
         syn = np.bincount(syn_list)
         for ((k,i),s) in zip(self.synergy_info.items(),syn):
             rate = 0
-            while s > i['rate'][rate]:
+            #print(k,i['rate'],s)
+            while s >= i['rate'][rate]:
                 rate += 1
                 if rate >= len(i['rate']):
                     break
@@ -182,11 +189,12 @@ class TFT_env(object):
         if champ in self.total_units.keys():
             self.total_units[champ]['count'] += 1
             if item:
-                self.total_units[champ]['items'].append(item)
+                self.total_units[champ]['item'] += item
+                self.total_units[champ]['owner'].append(1)
             if self.total_units[champ]['count'] == 3:
                 levup = int(champ[-1]) + 1
                 levup_champ = champ[:-1] + str(levup)
-                self._champ_append(levup_champ,item)
+                self._champ_append(levup_champ,self.total_units[champ]['item'])
                 del self.total_units[champ]
         else:
             synergy = self.champ_state_info[champ[:-2]]['elem']
@@ -200,10 +208,10 @@ class TFT_env(object):
                     info[k] = i
             if item:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
-                    items=[item])
+                    item=item,owner=[0])
             else:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
-                    items=[])
+                    item=[],owner=[])
             if level == '3':
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
@@ -233,8 +241,8 @@ class TFT_env(object):
             self.money += self._cost(champ)
             self.total_units[champ]['count'] -= 1
             if self.total_units[champ]['count'] == 0:
-                if self.total_units[champ]['items']:
-                    self.items += self.total_units[champ]['items']
+                if self.total_units[champ]['item']:
+                    self.items += self.total_units[champ]['item']
                 del self.total_units[champ]
             self.is_prepared = False
         elif act1 == 7:
@@ -248,14 +256,34 @@ class TFT_env(object):
             self.is_prepared = False
         self._update_synergy()
     def _rearrange(self):
-        # update later
-        1 == 1
+        # random pick
+        units,syns = [],[]
+        self.fight_items,self.fight_units = [],[]
+        for k,i in self.total_units.items():
+            for n in range(i['count']):
+                units += [k+'_'+str(n)]
+                syns += [i['synergy']]
+        if len(units) <= self.player_level:
+            self.fight_units = units
+        else:
+            chosen = np.random.choice(len(units),self.player_level)
+            self.fight_units = [units[c] for c in chosen]
+            self.fight_synergy = [syns[c] for c in chosen]
+        for unit in self.fight_units:
+            items = self.total_units[unit[:-2]]['item']
+            owners = self.total_units[unit[:-2]]['owner']
+            unit_item = []
+            for owner,item in zip(owners,items):
+                if owner == int(unit[-1]):
+                    unit_item += [item]
+            self.fight_items.append(unit_item)
     def play_round(self,act):
         result = 'sushi'
         if self.cur_round == '1-1':
             pass
         elif (self.cur_round[0] != '1') and (self.cur_round[-1] == '4'):
             self._sushi()
+            self._rearrange()
             self._update_synergy()
         else:
             action1 = self.act1_spc.index(act)
@@ -291,8 +319,9 @@ class TFT_env(object):
             'Champs : {}\n'+\
             'Continuous : {}\n'+\
             'Synergy : {}\n'+\
+            'Items : {}\n'+\
             '-----------------------').format(self.cur_round,result,self.life,self.player_level,
-                self.money,self.total_units.keys(),self.continuous,self.player_synergy)
+                self.money,self.fight_units,self.continuous,self.player_synergy,self.fight_items)
         print(msg)
         self._champ_queue()
         self._round()
