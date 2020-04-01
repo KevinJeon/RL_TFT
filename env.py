@@ -1,5 +1,6 @@
 import config_3 as cfg
 import numpy as np
+from fight.fight import fight
 # env
 '''
 to do
@@ -27,6 +28,7 @@ to do
 2. 아이템 개인 할당 방법 - done
 3. 초반 금액 상승폭 수정 필요 - done
 4. 골드 지급은 라운드 시작 시 지급 - done
+5. 챔프 고유 번호 부여
 '''
 
 class TFT_env(object):
@@ -138,9 +140,11 @@ class TFT_env(object):
     def _money(self):
         '''
         money rule
-        1. 1-4?
-        2. interset : 10골드 당 1원 max 5
-        3. continuous : 2~3  - +1 4~6 - +2 7~ - +3
+        1. '1-2','1-3' : 2
+        2. '1-4','2-1 : 3
+        3. '2-2' : 4
+        4. interset : 10골드 당 1원 max 5
+        5. continuous : 2 - +1 3 - +2 4 ~ - +3
         '''
         if self.cur_round in ['1-2','1-3','1-4','2-1','2-2']:
             self.money += 2
@@ -181,10 +185,6 @@ class TFT_env(object):
                     break
             if rate >= 1:
                 self.player_synergy.append(k+'_'+str(rate))
-    def _fight(self):
-        # 임시
-        n = int(self.cur_round[0])
-        return np.random.choice([True,False]),np.random.randint(2*n,8*n)
     def _champ_append(self,champ,item=None):
         if champ in self.total_units.keys():
             self.total_units[champ]['count'] += 1
@@ -197,6 +197,7 @@ class TFT_env(object):
                 self._champ_append(levup_champ,self.total_units[champ]['item'])
                 del self.total_units[champ]
         else:
+            num = list(self.champ_state_info.keys()).index(champ[:-2])
             synergy = self.champ_state_info[champ[:-2]]['elem']
             infos = self.champ_level_info[champ[:-2]].items()
             info = dict()
@@ -208,10 +209,10 @@ class TFT_env(object):
                     info[k] = i
             if item:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
-                    item=item,owner=[0])
+                    item=item,owner=[0],num=num)
             else:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
-                    item=[],owner=[])
+                    item=[],owner=[],num=num)
             if level == '3':
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
@@ -256,9 +257,11 @@ class TFT_env(object):
             self.is_prepared = False
         self._update_synergy()
     def _rearrange(self):
-        # random pick
+        # random pick & random arrange
         units,syns = [],[]
         self.fight_items,self.fight_units = [],[]
+        hexes = np.arange(28)
+        self.fight_arrange = np.random.choice(hexes,self.player_level)
         for k,i in self.total_units.items():
             for n in range(i['count']):
                 units += [k+'_'+str(n)]
@@ -277,6 +280,7 @@ class TFT_env(object):
                 if owner == int(unit[-1]):
                     unit_item += [item]
             self.fight_items.append(unit_item)
+
     def play_round(self,act):
         result = 'sushi'
         if self.cur_round == '1-1':
@@ -297,7 +301,9 @@ class TFT_env(object):
                 self._player_levelup()
                 self._rearrange()
                 self._update_synergy()
-                result,life_change = self._fight()
+                print(self.fight_units)
+                result,life_change = fight(self.fight_units,self.fight_arrange,
+                    self.fight_items,self.player_synergy)
                 if result:
                     self.money += 1
                     if self.continuous >=  0:
