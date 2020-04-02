@@ -1,6 +1,6 @@
 import config_3 as cfg
 import numpy as np
-from fight.fight import fight
+from fight.fight import Fight
 # env
 '''
 to do
@@ -29,6 +29,7 @@ to do
 3. 초반 금액 상승폭 수정 필요 - done
 4. 골드 지급은 라운드 시작 시 지급 - done
 5. 챔프 고유 번호 부여
+6. 마나 때리면 10차는데, 맞으면 몇 차는지 모르겠다.
 '''
 
 class TFT_env(object):
@@ -209,10 +210,10 @@ class TFT_env(object):
                     info[k] = i
             if item:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
-                    item=item,owner=[0],num=num)
+                    item=item,owner=[0],num=num+1)
             else:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
-                    item=[],owner=[],num=num)
+                    item=[],owner=[],num=num+1)
             if level == '3':
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
@@ -259,17 +260,20 @@ class TFT_env(object):
     def _rearrange(self):
         # random pick & random arrange
         units,syns = [],[]
+        self.fight_num,self.fight_infos = [],[]
         self.fight_items,self.fight_units = [],[]
         hexes = np.arange(28)
-        self.fight_arrange = np.random.choice(hexes,self.player_level)
+        self.fight_arrange = np.random.choice(hexes,self.player_level,replace=False)
         for k,i in self.total_units.items():
             for n in range(i['count']):
                 units += [k+'_'+str(n)]
                 syns += [i['synergy']]
+                self.fight_num += [i['num']]
+                self.fight_infos += [i['info']]
         if len(units) <= self.player_level:
             self.fight_units = units
         else:
-            chosen = np.random.choice(len(units),self.player_level)
+            chosen = np.random.choice(len(units),self.player_level,replace=False)
             self.fight_units = [units[c] for c in chosen]
             self.fight_synergy = [syns[c] for c in chosen]
         for unit in self.fight_units:
@@ -302,8 +306,10 @@ class TFT_env(object):
                 self._rearrange()
                 self._update_synergy()
                 print(self.fight_units)
-                result,life_change = fight(self.fight_units,self.fight_arrange,
-                    self.fight_items,self.player_synergy)
+                fight = Fight(self.fight_units,self.fight_num,
+                    self.fight_arrange,self.fight_items,self.player_synergy,
+                    self.fight_infos)
+                fight.fight()
                 if result:
                     self.money += 1
                     if self.continuous >=  0:

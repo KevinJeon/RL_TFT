@@ -1,4 +1,4 @@
-from env import TFT_env
+from env import TFT_env      
 import config_3 as cfg
 import numpy as np
 def main():
