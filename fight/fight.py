@@ -26,26 +26,45 @@ class Fight:
             for c,it in enumerate(item):
                 hexes[a,9+c] = it
         return hexes
-    def _move(self,hexes):
-        move_range = [-1,0,1]
+    def _first_move(self,hexes):
         for i,arr in enumerate(self.myarr):
+            if (arr // 7) %  2 == 0:
+                move_range = [-1,0,1,7,8]
+                odd = False
+                if arr % 7 == 0:
+                    move_range.remove(-1)
+                elif arr % 7 == 6:
+                    move_range.remove(1)
+                    move_range.remove(8)
+            else:
+                odd = True
+                move_range = [-1,0,1,6,7]
+                if arr % 7 == 0:
+                    move_range.remove(-1)
+                    move_range.remove(7)
+                elif arr % 7 == 6:
+                    move_range.remove(1)
             while True:
-                move = np.random.choice(move_range,2)
-                move[1] = move[1]*7
-                move = sum(move)
-                if ((arr+move < 27) and (arr+move > -54)) and (arr+move not in self.myarr):
+                move = np.random.choice(move_range,1)[0]
+                if move == 0:
+                    break
+                if ((arr+move < 54) and (arr+move > 0)) and (arr+move not in self.myarr):
                     self.myarr[i] = move + arr
                     break
+                move_range.remove(move)
     #def _avail_attack(self):
     #    self.myhexes
-    def _fight_tic(self,hexes):
-        print(np.reshape(hexes[:,0],(8,7)))
-        self._move(hexes)
+    def _fight_tic(self,hexes,first=True):
+        print(np.reshape(hexes[:,0],(8,7))[:5,:][::-1])
+        if first:
+            self._first_move(hexes)
+        else:
+            self._move(hexes)
         skill = None
         hexes = np.zeros((56,15))
         hexes = self._assign_hexes(hexes,self.mynum,self.myarr,self.myitems,
             self.mysyn,self.myinfo,skill)
-        print(np.reshape(hexes[:,0],(8,7)))
+        print(np.reshape(hexes[:,0],(8,7))[:5,:][::-1])
         return hexes
     def fight(self):
         self._fight_tic(self.myhexes)
