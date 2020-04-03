@@ -1,4 +1,4 @@
-# for TFT set 3
+# for TFT set 3 10.7
 elements = ['Celestial','Chrono','Cybernetic','Dark_Star','Mech_Pilot','Rebel',#5
     'Space_Pirate','Star_Guardian','Valkyrie','Void','Blademaster','Blaster',#11
     'Brawler','Demolitionist','Infiltrator','Mana_Reaver','Mercenary','Mystic',#17

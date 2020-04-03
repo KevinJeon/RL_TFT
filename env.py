@@ -18,10 +18,10 @@ to do
     3-1. item 할당만 - done
     3-2. random 하게 fight에 올리고 synergy fight unit에 맞게 적용
     3-3. item 네이밍 함수, item 융합 함수
-4. item 어빌리티 적용
-5. simple skill(단순 거리, 데미지)
-6. skill 복잡 스킬 구현
-7. fight
+4. fight
+    4-1. 1 tic에 대한 싸움 구현 2 tic = 1 sec
+    4-2. total fight에 대한 구현
+5
     7-1. 몹 라운드
 --to fix--
 1. 3성 만들면, 스시에도 빠지는 것 - done
@@ -262,8 +262,18 @@ class TFT_env(object):
         units,syns = [],[]
         self.fight_num,self.fight_infos = [],[]
         self.fight_items,self.fight_units = [],[]
-        hexes = np.arange(28)
-        self.fight_arrange = np.random.choice(hexes,self.player_level,replace=False)
+        yy = np.arange(4)
+        xx = np.arange(7)
+        hex_x = np.random.choice(xx,self.player_level)
+        hex_y = np.random.choice(yy,self.player_level)
+        self.fight_arrange = list(set([(x,y) for x,y in zip(hex_x,hex_y)]))
+        tofill = self.player_level - len(self.fight_arrange)
+        while tofill != 0:
+            hex_x = np.random.choice(xx,1)[0]
+            hex_y = np.random.choice(yy,1)[0]
+            if tuple([hex_x,hex_y]) not in list(self.fight_arrange):
+                self.fight_arrange.append((hex_x,hex_y))
+                tofill -= 1
         for k,i in self.total_units.items():
             for n in range(i['count']):
                 units += [k+'_'+str(n)]
@@ -309,7 +319,7 @@ class TFT_env(object):
                 fight = Fight(self.fight_units,self.fight_num,
                     self.fight_arrange,self.fight_items,self.player_synergy,
                     self.fight_infos)
-                fight.fight()
+                win = fight.fight()
                 if result:
                     self.money += 1
                     if self.continuous >=  0:
