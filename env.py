@@ -20,6 +20,8 @@ to do
     3-3. item 네이밍 함수, item 융합 함수
 4. fight
     4-1. 1 tic에 대한 싸움 구현 2 tic = 1 sec
+        4-1-1. 최소 거리 상대 찾고 attack 한 번 - done
+        4-1-2. 최소 거리 상대 없을 시, 방향 따라 움직이는 _move  함수
     4-2. total fight에 대한 구현
 5
     7-1. 몹 라운드
