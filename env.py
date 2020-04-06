@@ -322,7 +322,7 @@ class TFT_env(object):
                 print(self.fight_units)
                 fight = Fight(self.fight_units,self.fight_num,
                     self.fight_arrange,self.fight_items,self.player_synergy,
-                    self.fight_infos)
+                    self.fight_infos,self.cur_round)
                 result,life_change = fight.fight()
                 if result:
                     self.money += 1

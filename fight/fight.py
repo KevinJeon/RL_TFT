@@ -1,12 +1,58 @@
 import numpy as np
 import config_3 as cfg
-import cv2
-import copy
+import copy,os,cv2
+def draw(my,opp,value,title,name):
+    x = int(274/2)
+    y = int(135/2)
+    img = np.full((1080,1920,3),255)
+    for m in my:
+        xx,yy = int(m[0]*274+x),int(m[1]*135+y)
+        if title == 'health':
+            if value[m[0],m[1]] > 500:
+                clr = (0,255,0)
+            elif value[m[0],m[1]] > 250:
+                clr = (30,255,255)
+            else:
+                clr = (0,0,255)
+            cv2.rectangle(img,(m[0]*274,m[1]*135),((m[0]+1)*274,(m[1]+1)*135),clr,-1)
+            print(str(value[m[0],m[1]]),xx,yy)
+            cv2.putText(img,str(value[m[0],m[1]]),(xx-40,yy-10),cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                1,(0,0,0),1)
+        elif title == 'status':
+            if value[m[0],m[1]] == -1:
+                clr = (0,0,255)
+            elif value[m[0],m[1]] == 1:
+                clr = (255,0,0)
+            cv2.rectangle(img,(m[0]*274,m[1]*135),((m[0]+1)*274,(m[1]+1)*135),clr,-1)
+    for o in opp:
+        xx,yy = int(o[0]*274+x),int(o[1]*135+y)
+        if title == 'health':
+            if value[o[0],o[1]] > 500:
+                clr = (0,255,0)
+            elif value[o[0],o[1]] > 250:
+                clr = (30,255,255)
+            else:
+                clr = (0,0,255)
+            cv2.rectangle(img,(o[0]*274,o[1]*135),((o[0]+1)*274,(o[1]+1)*135),clr,-1)
+            cv2.putText(img,str(value[o[0],o[1]]),(xx-40,yy-10),cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                1,(0,0,0),1)
+        elif title == 'status':
+            if value[o[0],o[1]] == -1:
+                clr = (0,0,255)
+            elif value[o[0],o[1]] == 1:
+                clr = (255,0,0)
+            cv2.rectangle(img,(o[0]*274,o[1]*135),((o[0]+1)*274,(o[1]+1)*135),clr,-1)
+    for i in range(8):
+        cv2.line(img,(274*(i+1),0),(274*(i+1),1080),(0,0,0),2)
+        if i != 7:
+            cv2.line(img,(0,135*(i+1)),(1920,135*(i+1)),(0,0,0),2)
+    cv2.imwrite(name,img)
 class Fight:
     '''
     '''
-    def __init__(self,myunits,mynum,myarr,myitems,mysyn,myinfo):
+    def __init__(self,myunits,mynum,myarr,myitems,mysyn,myinfo,cur_round):
         myskill = None
+        self.cur_round = cur_round
         self.myunits = myunits
         self.mynum = mynum
         self.myarr = myarr
@@ -100,7 +146,7 @@ class Fight:
 
             return hexes,False
 
-    def _fight_tic(self,hexes,first=True):
+    def _fight_tic(self,hexes,n):
         '''2 tic = 1 seconds'''
         tic = 2
         mark = hexes[:,:,0]
@@ -114,10 +160,11 @@ class Fight:
             mar = hexes[ma[0],ma[1],5]
             hexes,is_attack = self._is_attack_and_move(hexes,oar,oa,-1,1,oa_enemies,tic)
             hexes,is_attack = self._is_attack_and_move(hexes,mar,ma,1,-1,ma_enemies,tic)
-        print(hexes[:,:,0])
-        print(hexes[:,:,2])
+        #print(hexes[:,:,0])
+        #print(hexes[:,:,2])
         skill = None
         self._read_hexes(hexes)
+        self.visualize(hexes,n)
         return hexes
     def _die(self):
         health = self.hexes[:,:,2]
@@ -147,9 +194,24 @@ class Fight:
             return True,None,2
     def fight(self):
         notend = True
+        n = 0
         while notend:
-            self._fight_tic(self.hexes)
+            self._fight_tic(self.hexes,n)
             self._die()
             notend,win,life_change = self._end()
             #notend = False
+            n += 1
         return win,life_change
+    def visualize(self,hexes,n):
+        health = hexes[:,:,2]
+        status = hexes[:,:,0]
+        if not os.path.exists('./fig/{}'.format('ROUND_'+self.cur_round)):
+            os.mkdir('./fig/{}'.format('ROUND_'+self.cur_round))
+            os.mkdir('./fig/{}/status'.format('ROUND_'+self.cur_round))
+            os.mkdir('./fig/{}/health'.format('ROUND_'+self.cur_round))
+        xs,ys = np.meshgrid(np.linspace(1,8,8),np.linspace(1,7,7))
+        stat_fn = './fig/{}/status/stat_{}.jpg'.format('ROUND_'+self.cur_round,n)
+        heal_fn = './fig/{}/health/health_{}.jpg'.format('ROUND_'+self.cur_round,n)
+        print(status,health)
+        draw(self.myarr,self.opparr,status,'status',stat_fn)
+        draw(self.myarr,self.opparr,health,'health',heal_fn)
