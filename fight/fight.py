@@ -4,7 +4,6 @@ import cv2
 import copy
 class Fight:
     '''
-    죽거나 이동 시, 삭제 함수 별도 필요
     '''
     def __init__(self,myunits,mynum,myarr,myitems,mysyn,myinfo):
         myskill = None
@@ -48,6 +47,12 @@ class Fight:
                 hexes[ma[0],ma[1],11+c] = m
                 hexes[oa[0],oa[1],11+c] = o
         return hexes
+    def _read_hexes(self,hexes):
+        status = hexes[:,:,0]
+        oppxy = np.where(status==-1)
+        myxy = np.where(status==1)
+        self.opparr = [(x,y) for x,y in zip(oppxy[0],oppxy[1])]
+        self.myarr = [(x,y) for x,y in zip(myxy[0],myxy[1])]
     def _move(self,hexes,arr1,targ):
         '''
         1 tic에 1 move 가져감.
@@ -73,15 +78,15 @@ class Fight:
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
-        if attack_range < nearest_dist:
+        #print('ar',attack_range,'near',nearest_dist)
+        if attack_range >= nearest_dist:
             damage = hexes[arr[0],arr[1],6] - hexes[enemies[ind][0],enemies[ind][1],8]
             hexes[enemies[ind][0],enemies[ind][1],2] -= damage/tic*hexes[arr[0],arr[1],7]
-            #print('hit {}'.format(damage/2*hexes[arr[0],arr[1],7]))
+            print('hit {}'.format(damage/2*hexes[arr[0],arr[1],7]))
             if hexes[enemies[ind][0],enemies[ind][1],2] == 0:
                 hexes[enemies[ind][0],enemies[ind][1],2] = -1.333
             return hexes,True
         else:
-            print('bef',arr)
             targ = enemies[ind]
             moved = self._move(hexes,arr,targ)
             if you == -1:
@@ -109,15 +114,10 @@ class Fight:
             mar = hexes[ma[0],ma[1],5]
             hexes,is_attack = self._is_attack_and_move(hexes,oar,oa,-1,1,oa_enemies,tic)
             hexes,is_attack = self._is_attack_and_move(hexes,mar,ma,1,-1,ma_enemies,tic)
-        #print(hexes[:,:,0])
-        #print(hexes[:,:,2])
-        print(self.opparr,self.myarr)
+        print(hexes[:,:,0])
+        print(hexes[:,:,2])
         skill = None
-        hexes = np.zeros((7,8,17))
-        hexes = self._assign_hexes(hexes,self.mynum,self.myarr,self.myitems,
-            self.mysyn,self.myinfo,skill,self.mynum,self.myarr,self.myitems,
-                self.mysyn,self.myinfo,skill)
-        #print(hexes[:,:,0][::-1])
+        self._read_hexes(hexes)
         return hexes
     def _die(self):
         health = self.hexes[:,:,2]
@@ -138,8 +138,7 @@ class Fight:
         #print(np.where(health<0))
     def _end(self):
         myopp = self.hexes[:,:,0]
-        print('myopp : ',myopp)
-        print(self.myarr,self.opparr)
+        #print('myopp : \n',myopp)
         if self.myarr == []:
             return False,False,2
         elif self.opparr == []:

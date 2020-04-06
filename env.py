@@ -264,18 +264,6 @@ class TFT_env(object):
         units,syns = [],[]
         self.fight_num,self.fight_infos = [],[]
         self.fight_items,self.fight_units = [],[]
-        yy = np.arange(4)
-        xx = np.arange(7)
-        hex_x = np.random.choice(xx,self.player_level)
-        hex_y = np.random.choice(yy,self.player_level)
-        self.fight_arrange = list(set([(x,y) for x,y in zip(hex_x,hex_y)]))
-        tofill = self.player_level - len(self.fight_arrange)
-        while tofill != 0:
-            hex_x = np.random.choice(xx,1)[0]
-            hex_y = np.random.choice(yy,1)[0]
-            if tuple([hex_x,hex_y]) not in list(self.fight_arrange):
-                self.fight_arrange.append((hex_x,hex_y))
-                tofill -= 1
         for k,i in self.total_units.items():
             for n in range(i['count']):
                 units += [k+'_'+str(n)]
@@ -284,7 +272,9 @@ class TFT_env(object):
                 self.fight_infos += [i['info']]
         if len(units) <= self.player_level:
             self.fight_units = units
+            avail_units = len(units)
         else:
+            avail_units = self.player_level
             chosen = np.random.choice(len(units),self.player_level,replace=False)
             self.fight_units = [units[c] for c in chosen]
             self.fight_synergy = [syns[c] for c in chosen]
@@ -296,6 +286,18 @@ class TFT_env(object):
                 if owner == int(unit[-1]):
                     unit_item += [item]
             self.fight_items.append(unit_item)
+        yy = np.arange(4)
+        xx = np.arange(7)
+        hex_x = np.random.choice(xx,avail_units)
+        hex_y = np.random.choice(yy,avail_units)
+        self.fight_arrange = list(set([(x,y) for x,y in zip(hex_x,hex_y)]))
+        tofill = avail_units - len(self.fight_arrange)
+        while tofill != 0:
+            hex_x = np.random.choice(xx,1)[0]
+            hex_y = np.random.choice(yy,1)[0]
+            if tuple([hex_x,hex_y]) not in list(self.fight_arrange):
+                self.fight_arrange.append((hex_x,hex_y))
+                tofill -= 1
 
     def play_round(self,act):
         result = 'sushi'
