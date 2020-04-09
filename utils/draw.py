@@ -1,9 +1,16 @@
-import cv2
+import cv2,glob
 import numpy as np
 import config_3 as cfg
-#def make_video(dir):
-
-def draw_chess(hexes,imgname):
+def make_video(dir,videoname):
+    frames = []
+    out = cv2.VideoWriter(videoname,cv2.VideoWirter_fourcc(*'DIVX'),15,size)
+    for fn in glob.glob(dir):
+        img = cv2.imread(fn)
+        h,w,l = img.shape
+        size = (w,h)
+        out.write(img)
+    out.release()
+def draw_chess(hexes,imgname,attack_infos):
     '''
     center
     - odd : (310+200n,240),(310+200n,640)
@@ -11,14 +18,15 @@ def draw_chess(hexes,imgname):
     '''
     img = make_chess()
     find_units = np.where(hexes[:,:,0]!=0)
+    item_name = [None,'Spatula','Giant Belt','Tear of the Goddeness',0,
+        'Needless Large Rod',0,'BF sword','Recurve bow','Chain vest',
+        'Negatron Clock',0,'Sparring Gloves']
     pairs = [[x,y] for x,y in zip(find_units[0],find_units[1])]
     for p in pairs:
         side = hexes[p[0],p[1],0]
         if p[1] % 2 == 0:
-            odd = False
             const = 210
         else:
-            odd = True
             const = 310
         st = (200*p[0]+const,140+200*p[1])
         en = (200*p[0]+const+200,340+200*p[1])
@@ -35,10 +43,12 @@ def draw_chess(hexes,imgname):
         elif hp > 300:
             hp_clr = (10,200,200)
         else:
-            hp_clr = (255,0,0)
+            hp_clr = (0,0,255)
         cur_mana = hexes[p[0],p[1],3]
         tot_mana = hexes[p[0],p[1],4]
         is_skill = hexes[p[0],p[1],5]
+        item_ind = hexes[p[0],p[1],13:]
+        items = set([item_name[int(ind)] for ind in item_ind])
         if is_skill == 1:
             skill = 'already'
         else:
@@ -51,12 +61,22 @@ def draw_chess(hexes,imgname):
             (st[0],st[1]+150),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2)
         img = cv2.putText(img,'skill : {}'.format(skill),(st[0],st[1]+130),
             cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2)
+        img = cv2.putText(img,'item : {}'.format(items),(st[0],st[1]+110),
+            cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2)
+    for info in attack_infos:
+        eneind,damage,arr,arrind = info
+        if arr[1] % 2 == 0:
+            const = 210
+        else:
+            const = 310
+        st = (200*arr[0]+const,140+200*arr[1])
+        damaging = find_name(int(arrind))
+        damaged = find_name(int(eneind))
+        if damage == 0:
+            damage ='move to'
+        img = cv2.putText(img,'{} {} {}'.format(damaging,damage,damaged),
+            (st[0],st[1]+90),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2)
     cv2.imwrite(imgname,img)
-
-
-
-
-
 def make_chess():
     img = np.full((1920,1920,3),255).astype('float')
     for i in range(7):
