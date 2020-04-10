@@ -1,6 +1,6 @@
 import numpy as np
 import copy,os
-from utils.draw import draw_chess,make_video
+from utils.draw import draw_chess,make_video,find_name
 from fight.items import item_apply
 class Fight:
     '''
@@ -44,6 +44,7 @@ class Fight:
             hexes[ma[0],ma[1],10] = minf['magical_resistance']
             hexes[oa[0],oa[1],10] = oinf['magical_resistance']
             # index 11 is skill
+            # index 12 is sparring
             for c,(m,o) in enumerate(zip(mitem,oitem)):
                 hexes[ma[0],ma[1],13+c] = m
                 hexes[oa[0],oa[1],13+c] = o
@@ -80,9 +81,10 @@ class Fight:
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
-        hexes = item_apply(hexes,arr)
         if attack_range >= nearest_dist:
             damage = hexes[arr[0],arr[1],7] - hexes[enemies[ind][0],enemies[ind][1],9]
+            if damage < 0:
+                damage = 0
             hexes[enemies[ind][0],enemies[ind][1],2] -= damage/tic*hexes[arr[0],arr[1],8]
             self._mana(hexes,arr,hit=True)
             self._mana(hexes,enemies[ind],hit=False)
@@ -90,24 +92,19 @@ class Fight:
                 hexes[enemies[ind][0],enemies[ind][1],2] = -1.333
             arrind = hexes[arr[0],arr[1],1]
             eneind = hexes[enemies[ind][0],enemies[ind][1],1]
-            attack_info = [eneind,damage/tic*hexes[arr[0],arr[1],8],arr,arrind]
+            attack_info = copy.copy([eneind,damage/tic*hexes[arr[0],arr[1],8],arr,arrind])
             return hexes,attack_info
         else:
             targ = enemies[ind]
             eneind = copy.copy(hexes[targ[0],targ[1],1])
             attack_info = [eneind,0]
             moved = self._move(hexes,arr,targ)
-            if you == -1:
-                self.opparr.remove(tuple(arr))
-                self.opparr.append(tuple(moved))
-            elif you == 1:
-                self.myarr.remove(tuple(arr))
-                self.myarr.append(tuple(moved))
             if moved != arr:
                 hexes[moved[0],moved[1],:] = hexes[arr[0],arr[1],:]
                 hexes[arr[0],arr[1],:]  = 0
             arrind = hexes[moved[0],moved[1],1]
             attack_info += [moved,arrind]
+            attack_info = copy.copy(attack_info)
             return hexes,attack_info
     def _mana(self,hexes,arr,hit=True):
         '''
@@ -141,23 +138,24 @@ class Fight:
     def _fight_tic(self,hexes,n,draw=False):
         '''2 tic = 1 seconds'''
         tic = 2
-        mark = hexes[:,:,0]
-        oxs,oys=np.where(mark==1)
-        mxs,mys=np.where(mark==-1)
-        oa_enemies = np.array([[x,y] for x,y in zip(oxs,oys)])
-        ma_enemies = np.array([[x,y] for x,y in zip(mxs,mys)])
         hexes = self._skill(hexes)
         attack_infos = []
         for oa,ma in zip(self.opparr,self.myarr):
             oa,ma = list(oa),list(ma)
+            mark = hexes[:,:,0]
             oar = hexes[oa[0],oa[1],6]
             mar = hexes[ma[0],ma[1],6]
+            oxs,oys=np.where(mark==1)
+            oa_enemies = np.array([[x,y] for x,y in zip(oxs,oys)])
             hexes,attack_info = self._one_champ_tic(hexes,oar,oa,-1,1,oa_enemies,tic)
+            mark = hexes[:,:,0]
+            mxs,mys=np.where(mark==-1)
+            ma_enemies = np.array([[x,y] for x,y in zip(mxs,mys)])
             attack_infos.append(attack_info)
-            self._read_hexes(hexes)
             hexes,attack_info = self._one_champ_tic(hexes,mar,ma,1,-1,ma_enemies,tic)
+            #    print(find_name(int(attack_info[0])),find_name(int(attack_info[3])))
             attack_infos.append(attack_info)
-            self._read_hexes(hexes)
+        self._read_hexes(hexes)
         skill = None
         if draw:
             self.visualize(hexes,n,attack_infos)
@@ -192,11 +190,14 @@ class Fight:
     def fight(self,video=False):
         notend = True
         n = 0
+        self.hexes = item_apply(self.hexes)
         while notend:
             self._fight_tic(self.hexes,n,draw=True)
             self._die()
             notend,win,life_change = self._end()
             n += 1
+            if n > 2000:
+                self.hexes[:,:,2] = 0
         if video:
             dir = './fig/{}'.format(self.cur_round)
             make_video(dir,dir+'/{}.avi'.format(self.cur_round))
