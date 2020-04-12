@@ -192,7 +192,7 @@ class Fight:
         n = 0
         self.hexes = item_apply(self.hexes)
         while notend:
-            self._fight_tic(self.hexes,n,draw=True)
+            self._fight_tic(self.hexes,n,draw=False)
             self._die()
             notend,win,life_change = self._end()
             n += 1

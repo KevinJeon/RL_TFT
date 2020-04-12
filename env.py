@@ -53,7 +53,7 @@ class TFT_env(object):
         self.champ_level_info = champ_level_info
         self.cur_round = '1-1'
         self.synergy_info = synergy_info
-        self.items = [0,1,2,3,5,7,8,9,10,12]
+        self.items = [0,1,2,3,7,8,9,10,11,12]
         # player
         self.need_xp = [2,4,8,14,24,44,76,126,192]
         # units
