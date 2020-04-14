@@ -1,15 +1,17 @@
-import cv2,glob
+import cv2,glob,os
 import numpy as np
 import config_3 as cfg
 def make_video(dir,videoname):
     frames = []
-    out = cv2.VideoWriter(videoname,cv2.VideoWirter_fourcc(*'DIVX'),15,size)
-    for fn in glob.glob(dir):
-        img = cv2.imread(fn)
-        h,w,l = img.shape
-        size = (w,h)
+    cap = cv2.VideoCapture(0)
+    out = cv2.VideoWriter(videoname,cv2.VideoWriter_fourcc(*'DIVX'),3,(1920,1920))
+    for fn in os.listdir(dir):
+        img = cv2.imread(os.path.join(dir,fn))
+        print(fn)
         out.write(img)
     out.release()
+    cap.release()
+    cv2.destroyAllWindows()
 def draw_chess(hexes,imgname,attack_infos):
     '''
     center
@@ -92,3 +94,5 @@ def make_chess():
 def find_name(ind):
     champs = list(cfg.champ_state_info)
     return champs[ind-1]
+#if __name__ =='__main__':
+#    make_video('./fig/ROUND_5-1','./fig/ex.avi')

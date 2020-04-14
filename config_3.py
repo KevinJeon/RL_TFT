@@ -198,7 +198,7 @@ synergy_info = dict(
         description='attack speed'),
     Cybernetic=dict(rate=[3,6],effect=[[350,50],[800,80]],
         description='health,damage when item occupied'),
-    Dark_Star=dict(rate=[3,6,9],effect=[[0.7,1],[1.5,3],[2.5,5]],
+    Dark_Star=dict(rate=[3,6],effect=[25,35],
         description='damage percent, hexes'),
     Mech_Pilot=dict(rate=[3],effect=[1],
         description='mech robot'),

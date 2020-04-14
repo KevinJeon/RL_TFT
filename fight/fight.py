@@ -1,7 +1,7 @@
 import numpy as np
 import copy,os
 from utils.draw import draw_chess,make_video,find_name
-from fight.items import item_apply
+from buff.synergy import Synergy
 class Fight:
     '''
     '''
@@ -14,12 +14,38 @@ class Fight:
         self.myitems = myitems
         self.mysyn = mysyn
         self.myinfo = myinfo
-        hexes = np.zeros((7,8,20))
+        self.player_synergy = mysyn
+        hexes = np.zeros((7,8,22))
         self.opparr = [(6-oa[0],7-oa[1]) for oa in myarr]
-        self.hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
+        self.max_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
+            mynum,self.opparr,myitems,mysyn,myinfo,myskill)
+        self.cur_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
             mynum,self.opparr,myitems,mysyn,myinfo,myskill)
     def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
-        oppnum,opparr,oppitems,oppsyn,oppinfo,oppskill):
+        oppnum,opparr,oppitems,oppsyn,oppinfo,oppskill,max=True):
+        '''
+        0 ~ 10 : static field
+        0 : opponent or mine
+        1 : name index
+        2 : cur Health
+        3 : max_health
+        4 : cur_mana
+        5 : max mana
+        6 : attack_range
+        7 : attacK_damage
+        8 : attack_speed
+        9 : armor
+        10 : magical_resistance
+        11 : is_skill
+        12 : skill damage
+        13 : sparring prob
+        14 : sparring percent
+        15 ~ 21 : item
+        '''
+        if max:
+            mana = 1
+        else:
+            mana = 0
         for mn,ma,mitem,minf,on,oa,oitem,oinf in \
             zip(mynum,myarr,myitems,myinfo,oppnum,opparr,oppitems,oppinfo):
             hexes[ma[0],ma[1],0] = 1
@@ -28,26 +54,31 @@ class Fight:
             hexes[oa[0],oa[1],1] = on
             hexes[ma[0],ma[1],2] = minf['health']
             hexes[oa[0],oa[1],2] = oinf['health']
-            hexes[ma[0],ma[1],3] = minf['mana'][0]
-            hexes[oa[0],oa[1],3] = oinf['mana'][0]
-            hexes[ma[0],ma[1],4] = minf['mana'][1]
-            hexes[oa[0],oa[1],4] = oinf['mana'][1]
-            # index 5 is is_skill
-            hexes[ma[0],ma[1],6] = minf['attack_range']
-            hexes[oa[0],oa[1],6] = oinf['attack_range']
-            hexes[ma[0],ma[1],7] = minf['attack_damage']
-            hexes[oa[0],oa[1],7] = oinf['attack_damage']
-            hexes[ma[0],ma[1],8] = minf['attack_speed']
-            hexes[oa[0],oa[1],8] = oinf['attack_speed']
-            hexes[ma[0],ma[1],9] = minf['armor']
-            hexes[oa[0],oa[1],9] = oinf['armor']
-            hexes[ma[0],ma[1],10] = minf['magical_resistance']
-            hexes[oa[0],oa[1],10] = oinf['magical_resistance']
-            # index 11 is skill
-            # index 12 is sparring
+            hexes[ma[0],ma[1],3] = minf['mana'][mana]
+            hexes[oa[0],oa[1],3] = oinf['mana'][mana]
+            hexes[ma[0],ma[1],4] = minf['attack_range']
+            hexes[oa[0],oa[1],4] = oinf['attack_range']
+            hexes[ma[0],ma[1],5] = minf['attack_damage']
+            hexes[oa[0],oa[1],5] = oinf['attack_damage']
+            hexes[ma[0],ma[1],6] = minf['attack_speed']
+            hexes[oa[0],oa[1],6] = oinf['attack_speed']
+            hexes[ma[0],ma[1],7] = minf['armor']
+            hexes[oa[0],oa[1],7] = oinf['armor']
+            hexes[ma[0],ma[1],8] = minf['magical_resistance']
+            hexes[oa[0],oa[1],8] = oinf['magical_resistance']
+            # index 9 is is_skill
+            # index 10 is sklll damage
+            # index 11 is health recovery by damage
+            # index 12 is sparring prob
+            # index 13 is sparring percent
+            hexes[ma[0],ma[1],14] = minf['synergy'][0]
+            hexes[oa[0],oa[1],14] = oinf['synergy'][0]
+            hexes[ma[0],ma[1],15] = minf['synergy'][1]
+            hexes[oa[0],oa[1],15] = oinf['synergy'][1]
             for c,(m,o) in enumerate(zip(mitem,oitem)):
-                hexes[ma[0],ma[1],13+c] = m
-                hexes[oa[0],oa[1],13+c] = o
+                hexes[ma[0],ma[1],16+c] = m
+                hexes[oa[0],oa[1],16+c] = o
+            # synergy fields
         return hexes
     def _read_hexes(self,hexes):
         status = hexes[:,:,0]
@@ -82,17 +113,17 @@ class Fight:
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
         if attack_range >= nearest_dist:
-            damage = hexes[arr[0],arr[1],7] - hexes[enemies[ind][0],enemies[ind][1],9]
+            damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
             if damage < 0:
                 damage = 0
-            hexes[enemies[ind][0],enemies[ind][1],2] -= damage/tic*hexes[arr[0],arr[1],8]
+            hexes[enemies[ind][0],enemies[ind][1],2] -= damage/tic*hexes[arr[0],arr[1],6]
             self._mana(hexes,arr,hit=True)
             self._mana(hexes,enemies[ind],hit=False)
             if hexes[enemies[ind][0],enemies[ind][1],2] == 0:
                 hexes[enemies[ind][0],enemies[ind][1],2] = -1.333
             arrind = hexes[arr[0],arr[1],1]
             eneind = hexes[enemies[ind][0],enemies[ind][1],1]
-            attack_info = copy.copy([eneind,damage/tic*hexes[arr[0],arr[1],8],arr,arrind])
+            attack_info = copy.copy([eneind,damage/tic*hexes[arr[0],arr[1],6],arr,arrind])
             return hexes,attack_info
         else:
             targ = enemies[ind]
@@ -101,6 +132,7 @@ class Fight:
             moved = self._move(hexes,arr,targ)
             if moved != arr:
                 hexes[moved[0],moved[1],:] = hexes[arr[0],arr[1],:]
+                self.max_hexes[moved[0],moved[1],:] = self.max_hexes[arr[0],arr[1],:]
                 hexes[arr[0],arr[1],:]  = 0
             arrind = hexes[moved[0],moved[1],1]
             attack_info += [moved,arrind]
@@ -113,15 +145,15 @@ class Fight:
         if skill, next tic skill activate
         '''
         cur_mana = hexes[arr[0],arr[1],3]
-        tot_mana = hexes[arr[0],arr[1],4]
+        tot_mana = self.max_hexes[arr[0],arr[1],3]
         is_skill = False
         if hit:
             cur_mana += 10
         else:
             cur_mana += 4
         if cur_mana >= tot_mana:
-            hexes[arr[0],arr[1],5] = 1
-            cur_mana -= tot_mana
+            hexes[arr[0],arr[1],9] = 1
+            cur_mana = 0
         hexes[arr[0],arr[1],3] = cur_mana
         return hexes,is_skill
     def _skill(self,hexes):
@@ -130,12 +162,12 @@ class Fight:
         - todo :
         단순 스킬 데미지 적용
         '''
-        skill = np.where(hexes[:,:,5]>=1)
+        skill = np.where(hexes[:,:,3]>=1)
         skill_xy = [[x,y] for x,y in zip(skill[0],skill[1])]
         for ski in skill_xy:
-            hexes[ski[0],ski[1],5] = 0
+            hexes[ski[0],ski[1],3] = 0
         return hexes
-    def _fight_tic(self,hexes,n,draw=False):
+    def _fight_tic(self,hexes,n,draw=False,*kwargs):
         '''2 tic = 1 seconds'''
         tic = 2
         hexes = self._skill(hexes)
@@ -143,8 +175,8 @@ class Fight:
         for oa,ma in zip(self.opparr,self.myarr):
             oa,ma = list(oa),list(ma)
             mark = hexes[:,:,0]
-            oar = hexes[oa[0],oa[1],6]
-            mar = hexes[ma[0],ma[1],6]
+            mar = hexes[ma[0],ma[1],4]
+            oar = hexes[oa[0],oa[1],4]
             oxs,oys=np.where(mark==1)
             oa_enemies = np.array([[x,y] for x,y in zip(oxs,oys)])
             hexes,attack_info = self._one_champ_tic(hexes,oar,oa,-1,1,oa_enemies,tic)
@@ -161,21 +193,21 @@ class Fight:
             self.visualize(hexes,n,attack_infos)
         return hexes
     def _die(self):
-        health = self.hexes[:,:,2]
+        health = self.cur_hexes[:,:,2]
         dies = np.where(health<0)
         diesx,diesy = dies
         for x,y in zip(diesx,diesy):
-            who = self.hexes[x,y,0]
+            who = self.cur_hexes[x,y,0]
             if who == -1:
                 self.opparr.remove((x,y))
             elif who == 1:
                 self.myarr.remove((x,y))
-            self.hexes[x,y,:] = 0
+            self.cur_hexes[x,y,:] = 0
     def _end(self):
         '''
         judge the round end & calcul the life change
         '''
-        myopp = self.hexes[:,:,0]
+        myopp = self.cur_hexes[:,:,0]
         round_damage = [0,3,4,5,10,15,20]
         if self.myarr == []:
             count = len(self.opparr)
@@ -190,14 +222,19 @@ class Fight:
     def fight(self,video=False):
         notend = True
         n = 0
-        self.hexes = item_apply(self.hexes)
+        print(self.mysyn)
+        mysyn = Synergy(self.cur_hexes,self.mysyn,n,self.myarr)
+        self.cur_hexes = mysyn.hexes
+        oppsyn = Synergy(self.cur_hexes,self.mysyn,n,self.opparr)
+        self.cur_hexes = oppsyn.hexes
+        self.max_hexes = oppsyn.hexes
         while notend:
-            self._fight_tic(self.hexes,n,draw=False)
+            self._fight_tic(self.cur_hexes,n,draw=False)
             self._die()
             notend,win,life_change = self._end()
             n += 1
             if n > 2000:
-                self.hexes[:,:,2] = 0
+                self.cur_hexes[:,:,2] = 0
         if video:
             dir = './fig/{}'.format(self.cur_round)
             make_video(dir,dir+'/{}.avi'.format(self.cur_round))
@@ -206,5 +243,6 @@ class Fight:
         if not os.path.exists('./fig/{}'.format('ROUND_'+self.cur_round)):
             os.mkdir('./fig/{}'.format('ROUND_'+self.cur_round))
         xs,ys = np.meshgrid(np.linspace(1,8,8),np.linspace(1,7,7))
-        imgname = './fig/{}/frame_{}.jpg'.format('ROUND_'+self.cur_round,n)
+        fn = (4 - len(str(n)))*'0' + str(n)
+        imgname = './fig/{}/frame_{}.jpg'.format('ROUND_'+self.cur_round,fn)
         draw_chess(hexes,imgname,attack_infos)

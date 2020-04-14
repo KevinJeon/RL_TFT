@@ -54,11 +54,13 @@ class TFT_env(object):
         self.cur_round = '1-1'
         self.synergy_info = synergy_info
         self.items = [0,1,2,3,7,8,9,10,11,12]
+        self.elements = elements
         # player
         self.need_xp = [2,4,8,14,24,44,76,126,192]
         # units
         self.total_units = dict()
         self.removal = dict(c1=[],c2=[],c3=[],c4=[],c5=[]) # already level 3 unit
+        self.fight_group = []
         self.fight_units = [] # fore rearrange
         self.fight_synergy = []
         self.fight_items = []
@@ -96,7 +98,7 @@ class TFT_env(object):
         self.player_level = 1
         self.five_champs = [True]*5
         self.five_cost = [0]*5
-        self.player_synergy = []
+        self.player_synergy = dict()
         self._sushi()
         msg = ('-----------------------\n'+\
             'Hi, Welcome to League of Legends TFT\n'+\
@@ -171,13 +173,13 @@ class TFT_env(object):
         '''
         syn_list = []
         used = []
-        self.player_synergy = []
+        self.player_synergy = dict()
         for syns,unit in zip(self.fight_synergy,self.fight_units):
             if unit[:-4] not in used:
                 syn_list += syns
                 used.append(unit[:-4])
         syn = np.bincount(syn_list)
-        for ((k,i),s) in zip(self.synergy_info.items(),syn):
+        for n,((k,i),s) in enumerate(zip(self.synergy_info.items(),syn)):
             rate = 0
             #print(k,i['rate'],s)
             while s >= i['rate'][rate]:
@@ -185,7 +187,12 @@ class TFT_env(object):
                 if rate >= len(i['rate']):
                     break
             if rate >= 1:
-                self.player_synergy.append(k+'_'+str(rate))
+                champs = []
+                for m,info in enumerate(self.fight_infos):
+                    if n in info['synergy'] :
+                        champs.append(m)
+                self.player_synergy[k] = dict(champ=champs,
+                    effect=i['effect'][rate-1],index=n)
     def _champ_append(self,champ,item=None):
         if champ in self.total_units.keys():
             self.total_units[champ]['count'] += 1
@@ -264,10 +271,12 @@ class TFT_env(object):
         self.fight_items,self.fight_units = [],[]
         for k,i in self.total_units.items():
             for n in range(i['count']):
+                info = i['info']
+                info['synergy'] = i['synergy']
                 units += [k+'_'+str(n)]
                 syns += [i['synergy']]
                 self.fight_num += [i['num']]
-                self.fight_infos += [i['info']]
+                self.fight_infos += [info]
         if len(units) <= self.player_level:
             self.fight_units = units
             avail_units = len(units)
@@ -276,6 +285,7 @@ class TFT_env(object):
             chosen = np.random.choice(len(units),self.player_level,replace=False)
             self.fight_units = [units[c] for c in chosen]
             self.fight_synergy = [syns[c] for c in chosen]
+            self.fight_infos = [self.fight_infos[c] for c in chosen]
         for unit in self.fight_units:
             items = self.total_units[unit[:-2]]['item']
             owners = self.total_units[unit[:-2]]['owner']
@@ -296,7 +306,8 @@ class TFT_env(object):
             if tuple([hex_x,hex_y]) not in list(self.fight_arrange):
                 self.fight_arrange.append((hex_x,hex_y))
                 tofill -= 1
-
+    def _assign_item(self):
+        1 == 1
     def play_round(self,act):
         result = 'sushi'
         if self.cur_round == '1-1':
@@ -304,6 +315,7 @@ class TFT_env(object):
         elif (self.cur_round[0] != '1') and (self.cur_round[-1] == '4'):
             self._sushi()
             self._rearrange()
+            self._assign_item()
             self._update_synergy()
         else:
             action1 = self.act1_spc.index(act)
@@ -316,6 +328,7 @@ class TFT_env(object):
                 self.xp += 2
                 self._player_levelup()
                 self._rearrange()
+                self._assign_item()
                 self._update_synergy()
                 print(self.fight_units)
                 fight = Fight(self.fight_units,self.fight_num,
