@@ -17,30 +17,13 @@ class Fight:
         self.player_synergy = mysyn
         hexes = np.zeros((7,8,22))
         self.opparr = [(6-oa[0],7-oa[1]) for oa in myarr]
-        self.max_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
+        self.start_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
             mynum,self.opparr,myitems,mysyn,myinfo,myskill)
         self.cur_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
             mynum,self.opparr,myitems,mysyn,myinfo,myskill)
     def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
         oppnum,opparr,oppitems,oppsyn,oppinfo,oppskill,max=True):
         '''
-        0 ~ 10 : static field
-        0 : opponent or mine
-        1 : name index
-        2 : cur Health
-        3 : max_health
-        4 : cur_mana
-        5 : max mana
-        6 : attack_range
-        7 : attacK_damage
-        8 : attack_speed
-        9 : armor
-        10 : magical_resistance
-        11 : is_skill
-        12 : skill damage
-        13 : sparring prob
-        14 : sparring percent
-        15 ~ 21 : item
         '''
         if max:
             mana = 1
@@ -70,14 +53,15 @@ class Fight:
             # index 10 is sklll damage
             # index 11 is health recovery by damage
             # index 12 is sparring prob
-            # index 13 is sparring percent
+            hexes[oa[0],oa[1],13] = 0.2 # index 13 is critical probability
             hexes[ma[0],ma[1],14] = minf['synergy'][0]
             hexes[oa[0],oa[1],14] = oinf['synergy'][0]
             hexes[ma[0],ma[1],15] = minf['synergy'][1]
             hexes[oa[0],oa[1],15] = oinf['synergy'][1]
+            # index 16 is is_stunned     
             for c,(m,o) in enumerate(zip(mitem,oitem)):
-                hexes[ma[0],ma[1],16+c] = m
-                hexes[oa[0],oa[1],16+c] = o
+                hexes[ma[0],ma[1],17+c] = m
+                hexes[oa[0],oa[1],17+c] = o
             # synergy fields
         return hexes
     def _read_hexes(self,hexes):
@@ -132,7 +116,7 @@ class Fight:
             moved = self._move(hexes,arr,targ)
             if moved != arr:
                 hexes[moved[0],moved[1],:] = hexes[arr[0],arr[1],:]
-                self.max_hexes[moved[0],moved[1],:] = self.max_hexes[arr[0],arr[1],:]
+                self.start_hexes[moved[0],moved[1],:] = self.start_hexes[arr[0],arr[1],:]
                 hexes[arr[0],arr[1],:]  = 0
             arrind = hexes[moved[0],moved[1],1]
             attack_info += [moved,arrind]
@@ -145,7 +129,7 @@ class Fight:
         if skill, next tic skill activate
         '''
         cur_mana = hexes[arr[0],arr[1],3]
-        tot_mana = self.max_hexes[arr[0],arr[1],3]
+        tot_mana = self.start_hexes[arr[0],arr[1],3]
         is_skill = False
         if hit:
             cur_mana += 10
@@ -185,7 +169,6 @@ class Fight:
             ma_enemies = np.array([[x,y] for x,y in zip(mxs,mys)])
             attack_infos.append(attack_info)
             hexes,attack_info = self._one_champ_tic(hexes,mar,ma,1,-1,ma_enemies,tic)
-            #    print(find_name(int(attack_info[0])),find_name(int(attack_info[3])))
             attack_infos.append(attack_info)
         self._read_hexes(hexes)
         skill = None
@@ -227,7 +210,7 @@ class Fight:
         self.cur_hexes = mysyn.hexes
         oppsyn = Synergy(self.cur_hexes,self.mysyn,n,self.opparr)
         self.cur_hexes = oppsyn.hexes
-        self.max_hexes = oppsyn.hexes
+        self.start_hexes = oppsyn.hexes
         while notend:
             self._fight_tic(self.cur_hexes,n,draw=False)
             self._die()
