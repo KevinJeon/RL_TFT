@@ -15,7 +15,7 @@ class Fight:
         self.mysyn = mysyn
         self.myinfo = myinfo
         self.player_synergy = mysyn
-        hexes = np.zeros((7,8,22))
+        hexes = np.zeros((7,8,25))
         self.opparr = [(6-oa[0],7-oa[1]) for oa in myarr]
         self.start_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
             mynum,self.opparr,myitems,mysyn,myinfo,myskill)
@@ -58,10 +58,18 @@ class Fight:
             hexes[oa[0],oa[1],14] = oinf['synergy'][0]
             hexes[ma[0],ma[1],15] = minf['synergy'][1]
             hexes[oa[0],oa[1],15] = oinf['synergy'][1]
-            # index 16 is is_stunned     
+            if len(minf['synergy']) == 3:
+                hexes[ma[0],ma[1],16] = minf['synergy'][2]
+            else:
+                hexes[ma[0],ma[1],16] = -1
+            if len(oinf['synergy']) == 3:
+                hexes[oa[0],oa[1],16] = oinf['synergy'][2]
+            else:
+                hexes[oa[0],oa[1],16] = -1
+            # index 17 is is_stunned
             for c,(m,o) in enumerate(zip(mitem,oitem)):
-                hexes[ma[0],ma[1],17+c] = m
-                hexes[oa[0],oa[1],17+c] = o
+                hexes[ma[0],ma[1],18+c] = m
+                hexes[oa[0],oa[1],18+c] = o
             # synergy fields
         return hexes
     def _read_hexes(self,hexes):
@@ -73,7 +81,7 @@ class Fight:
     def _move(self,hexes,arr1,targ):
         '''
         1 tic에 1 move 가져감.
-        todo : 앞에 상대 있을 시, 못 가게 해야함
+        todo : 지능적 움직임
         '''
         moved = copy.copy(arr1)
         diff = targ - arr1
@@ -179,11 +187,17 @@ class Fight:
         health = self.cur_hexes[:,:,2]
         dies = np.where(health<0)
         diesx,diesy = dies
+        self.myds_died = 0
+        self.oppds_died = 0
         for x,y in zip(diesx,diesy):
             who = self.cur_hexes[x,y,0]
             if who == -1:
+                if (self.cur_hexes[x,y,14] == 3) or (self.cur_hexes[x,y,15] == 3):
+                    self.oppds_died += 1
                 self.opparr.remove((x,y))
             elif who == 1:
+                if (self.cur_hexes[x,y,14] == 3) or (self.cur_hexes[x,y,15] == 3):
+                    self.myds_died += 1
                 self.myarr.remove((x,y))
             self.cur_hexes[x,y,:] = 0
     def _end(self):
@@ -202,16 +216,29 @@ class Fight:
             return False,True,count+round
         else:
             return True,None,0
+    def _synergy(self,n):
+        self.mysyn_infos.tic = n
+        self.mysyn_infos.ds_died = self.myds_died
+        self.oppsyn_infos.tic = n
+        self.oppsyn_infos.ds_died = self.oppds_died
+        self.mysyn_infos.hexes = self.cur_hexes
+        self.mysyn_infos.apply()
+        self.oppsyn_infos = self.mysyn_infos.hexes
+        self.oppsyn_infos.apply()
+        self.cur_hexes = self.oppsyn_infos.hexes
     def fight(self,video=False):
         notend = True
         n = 0
-        print(self.mysyn)
-        mysyn = Synergy(self.cur_hexes,self.mysyn,n,self.myarr)
-        self.cur_hexes = mysyn.hexes
-        oppsyn = Synergy(self.cur_hexes,self.mysyn,n,self.opparr)
-        self.cur_hexes = oppsyn.hexes
-        self.start_hexes = oppsyn.hexes
+        self.mysyn_infos = Synergy(self.cur_hexes,self.start_hexes,self.mysyn,n,self.myarr,
+            self.opparr)
+        self.cur_hexes = self.mysyn_infos.apply()
+        self.oppsyn_infos = Synergy(self.cur_hexes,self.start_hexes,self.mysyn,n,self.opparr,
+            self.myarr)
+        self.cur_hexes = self.oppsyn_infos.apply()
+        self.start_hexes = copy.copy(self.oppsyn_infos.hexes)
         while notend:
+            if n != 0:
+                self._synergy(n)
             self._fight_tic(self.cur_hexes,n,draw=False)
             self._die()
             notend,win,life_change = self._end()
