@@ -223,7 +223,7 @@ class Fight:
         self.oppsyn_infos.ds_died = self.oppds_died
         self.mysyn_infos.hexes = self.cur_hexes
         self.mysyn_infos.apply()
-        self.oppsyn_infos = self.mysyn_infos.hexes
+        self.oppsyn_infos.hexes = self.mysyn_infos.hexes
         self.oppsyn_infos.apply()
         self.cur_hexes = self.oppsyn_infos.hexes
     def fight(self,video=False):
@@ -231,10 +231,12 @@ class Fight:
         n = 0
         self.mysyn_infos = Synergy(self.cur_hexes,self.start_hexes,self.mysyn,n,self.myarr,
             self.opparr)
-        self.cur_hexes = self.mysyn_infos.apply()
+        self.mysyn_infos.apply()
+        self.cur_hexes = self.mysyn_infos.hexes
         self.oppsyn_infos = Synergy(self.cur_hexes,self.start_hexes,self.mysyn,n,self.opparr,
             self.myarr)
-        self.cur_hexes = self.oppsyn_infos.apply()
+        self.oppsyn_infos.apply()
+        self.cur_hexes = self.oppsyn_infos.hexes
         self.start_hexes = copy.copy(self.oppsyn_infos.hexes)
         while notend:
             if n != 0:
