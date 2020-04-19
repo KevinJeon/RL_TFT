@@ -12,7 +12,7 @@ def make_video(dir,videoname):
     out.release()
     cap.release()
     cv2.destroyAllWindows()
-def draw_chess(hexes,imgname,attack_infos):
+def draw_chess(hexes,maxhexes,imgname,attack_infos):
     '''
     center
     - odd : (310+200n,240),(310+200n,640)
@@ -47,9 +47,9 @@ def draw_chess(hexes,imgname,attack_infos):
         else:
             hp_clr = (0,0,255)
         cur_mana = hexes[p[0],p[1],3]
-        tot_mana = hexes[p[0],p[1],4]
-        is_skill = hexes[p[0],p[1],5]
-        item_ind = hexes[p[0],p[1],13:]
+        tot_mana = maxhexes[p[0],p[1],3]
+        is_skill = hexes[p[0],p[1],9]
+        item_ind = hexes[p[0],p[1],18:]
         items = set([item_name[int(ind)] for ind in item_ind])
         if is_skill == 1:
             skill = 'already'
@@ -93,6 +93,8 @@ def make_chess():
     return img
 def find_name(ind):
     champs = list(cfg.champ_state_info)
+    if ind == 100:
+        return dict(name='Mech Pilot',cost=0,elem=[])
     return champs[ind-1]
 #if __name__ =='__main__':
 #    make_video('./fig/ROUND_5-1','./fig/ex.avi')

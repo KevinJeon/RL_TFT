@@ -3,9 +3,8 @@ import config_3 as cfg
 
 class Synergy:
     def __init__(self,hexes,start_hexes,mysyn,tic,arrs,opparrs,ds_died=False,
-        mech_died=[False,'init'],pirate_kill=0,skilled_champs=0,valkyrie_target=False,
-        fourth_attack=False,demol_skilled=False,protector_skillcast=[],
-        protector_maintain=[],sniper_enemy=[]):
+        mech_died=[False,'init'],pirate_kill=0,star_skilled=0,valkyrie_target=False,
+        demol_skilled=False,protector_skillcast=[],protector_maintain=[]):
         '''
         hexes : chess board
         mysyn : synergies
@@ -16,35 +15,32 @@ class Synergy:
         ds_died : dead dark star, judge when _die - done
         mech_died : [True,xy of mech] -
         pirate_kill : int
-        skilled_champs : int
+        star_skilled : int
         valkyrie_target : enemy - [x,y]
-        fourth_attack : blaster's fourth attack
         demol_skilled : stunned
         protector_skillcast : shield make
-        sniper_enemy : enemy
         '''
-        self.ds_died = ds_died
         self.syns = list(mysyn.items())
         self.arrs = arrs
         self.opparrs = opparrs
         self.hexes = hexes
         self.start_hexes = start_hexes
         self.tic = tic
+        self.ds_died = ds_died
         self.mech_died = mech_died
         self.pirate_kill = pirate_kill
-        self.skilled_champs = skilled_champs
+        self.pirate_money,self.pirate_item = 0,[]
+        self.star_skilled = star_skilled
         self.valkyrie_target = valkyrie_target
-        self.fourth_attack = fourth_attack
-        self.demol_skilled = demol_skilled
+        self.demol_skilled = demol_skilled # later
         self.protector_skillcast = protector_skillcast
-        self.sniper_enemy = sniper_enemy
+        self.is_pirate,self.is_sniper,self.is_void = False,False,False
         self.functions = [self._celestial,self._chrono,self._cybernatic,self._dark_star,
             self._mech_pilot,self._rebel,self._space_pirate,self._star_guardian,
             self._valkyrie,self._void,self._blademaster,self._blaster,self._brawler,
             self._demolitionist,self._infiltrator,self._mana_reaver,self._mercenary,
             self._mystic,self._protector,self._sniper,self._sorcerer,self._starship,
             self._vanguard]
-        self.pirate_kill = pirate_kill
         self.updated_hexes = None
     def apply(self):
         for k,i in self.syns:
@@ -53,34 +49,34 @@ class Synergy:
             self.functions[i['index']](champs,i['effect'])
     def _celestial(self,champs,effect):
         if self.tic == 0:
-            print('_celestial')
+            #print('_celestial')
             for arr in self.arrs:
                 self.hexes[arr[0],arr[1],11] = effect
     def _chrono(self,champs,effect):
         if self.tic > 15:
-            print('_chrono')
+            #print('_chrono')
             pass
         elif self.tic % 4 == 3:
-            print('_chrono')
+            #print('_chrono')
             for arr in self.arrs:
                 self.hexes[arr[0],arr[1],6] += effect
 
     def _cybernatic(self,champs,effect):
         if self.tic == 0:
-            print('_cybernatic')
+            #print('_cybernatic')
             for champ in champs:
                 if self.hexes[champ[0],champ[1],16] != 0:
                     self.hexes[champ[0],champ[1],2] += effect[0]
                     self.hexes[champ[0],champ[1],5] += effect[1]
     def _dark_star(self,champs,effect):
         if self.ds_died:
-            print('_dark_star')
+            #print('_dark_star')
             for champ in champs:
                 self.hexes[champ[0],champ[1],10] += self.ds_died*effect
                 self.hexes[champ[0],champ[1],5] += self.ds_died*effect
     def _mech_pilot(self,champs,effect):
         if self.mech_died[0]:
-            print('_mech_pilot')
+            #print('_mech_pilot')
             xy = self.mech_died[1]
             n = 0
             tofill = [self.mech1,self.mech2,self.mech3]
@@ -93,7 +89,7 @@ class Synergy:
                     self.hexes[x,y,:] = tofill[n]
                     n += 1
         elif self.mech_died[1] == 'init':
-            print('_mech_pilot')
+            #print('_mech_pilot')
             selected = np.random.choice(champs,3)
             xy = np.random.choice(selected,1)[0]
             items = []
@@ -119,7 +115,7 @@ class Synergy:
                         it += 1
     def _rebel(self,champs,effect):
         if self.tic == 0:
-            print('_rebel')
+            #print('_rebel')
             for champ in champs:
                 copies = np.tile(champ,(len(champs),1))
                 diff = abs(copies-champs)
@@ -127,21 +123,21 @@ class Synergy:
                 self.hexes[champ[0],champ[1],2] += effect[0]*adj
                 self.hexes[champ[0],champ[1],5] += effect[1]*adj
     def _space_pirate(self,champs,effect):
-        print('_space_pirate')
+        #print('_space_pirate')
+        self.is_pirate = True
         items = [1,2,4,5,6,7,8,10,12,13]
-        self.pirate_money,self.pirate_item = 0,[]
-        for kill in self.pirate_kill:
+        for kill in range(self.pirate_kill):
             self.pirate_money += np.random.choice([0,1],1)[0]
-            give = np.random.choice([0,1],1,p=[1-effect,effect])[0]
+            give = np.random.choice([0,1],1,p=[1-effect[0],effect[0]])[0]
             if give == 1:
                 self.pirate_item += np.random.choice(items,1)[0]
     def _star_guardian(self,champs,effect):
-        print('_star_guardian')
+        #print('_star_guardian')
         for champ in champs:
-            self.hexes[champ[0],champ[1],3] += self.skilled_champs * effect
+            self.hexes[champ[0],champ[1],3] += self.star_skilled * effect
     def _valkyrie(self,champs,effect):
         '''need to order same with champs'''
-        print('_valkyrie')
+        #print('_valkyrie')
         for i,champ in enumerate(champs):
             enemy = self.valkyrie_target[i]
             if self.hexes[enemy[0],enemy[1],2] < self.start_hexes[enemy[0],enemy[1],2]/2:
@@ -152,16 +148,17 @@ class Synergy:
         '''
         apply at fight.py
         '''
-        print('_void')
+        #print('_void')
+        self.is_void = True
         1 == 1
     def _blademaster(self,champs,effect):
-        print('_blademaster')
+        #print('_blademaster')
         for champ in champs:
             hit = np.random.choice([1,2],1,p=[1-effect,effect])[0]
             self.hexes[champ[0],champ[1],5] = hit * self.hexes[champ[0],champ[1],5]
     def _blaster(self,champs,effect):
-        if self.fourth_attack:
-            print('_blaster')
+        if self.tic % 4 == 1:
+            #print('_blaster')
             for champ in champs:
                 if len(self.opparr) <= effect:
                     effect = len(self.opparr)
@@ -172,16 +169,16 @@ class Synergy:
                         damage = 0
                     self.hexes[add[0],add[1],2] -= damage/2*self.hexes[champ[0],champ[1],6]
     def _brawler(self,champs,effect):
-        print('_brawler')
+        #print('_brawler')
         if self.tic == 0:
             for champ in champs:
                 self.hexes[champ[0],champ[1],2] += effect
     def _demolitionist(self,champs,effect):
-        print('_demolitionist')
+        #print('_demolitionist')
         for skilled in self.demol_skilled:
-            self.hexes[skilled[0],skilled[1],16] = 1
+            self.hexes[skilled[0],skilled[1],17] = 1
     def _infiltrator(self,champs,effect):
-        print('_infiltrator')
+        #print('_infiltrator')
         if self.tic == 0:
             '''
             move later
@@ -192,45 +189,41 @@ class Synergy:
         '''
         later
         '''
-        print('_mana_reaver')
+        #print('_mana_reaver')
         1 == 1
     def _mercenary(self,champs,effect):
         '''
         later
         '''
-        print('_mercenary')
+        #print('_mercenary')
         1 == 1
     def _mystic(self,champs,effect):
         if self.tic == 0:
-            print('_mystic')
+            #print('_mystic')
             for champ in champs:
                 self.hexes[champ[0],champ[1],8] += effect
     def _protector(self,champs,effect):
-        print('_protector')
+        #print('_protector')
         for prot in self.protector_skillcast:
             self.hexes[prot[0],prot[1],2] += self.start_hexes[prot[0],prot[1],2]*effect
+            self.protector_maintain[prot] += [self.start_hexes[prot[0],prot[1],2]*effect]
+            self.protector_maintain[prot][0] -= 1
             '''disappear shield later'''
     def _sniper(self,champs,effect):
-        if self.tic > 0:
-            print('_sniper')
-            for champ,enemy in zip(champs,self.sniper_enemy):
-                x = abs(champ[0]-enemy[0])
-                y = abs(champ[1]-enemy[1])
-                self.hexes[champ[0],champ[1],5] += (effect * (x+y))*\
-                    self.hexes[champ[0],champ[1],5]
+        self.is_sniper = True
     def _sorcerer(self,champs,effect):
         if self.tic == 0:
-            print('_sorcerer')
+            #print('_sorcerer')
             for champ in champs:
                 self.hexes[champ[0],champ[1],10] += effect
     def _starship(self,champs,effect):
         '''move later'''
-        print('_starship')
+        #print('_starship')
 
         for champ in champs:
             self.hexes[champ[0],champ[1],3] += 20
     def _vanguard(self,champs,effect):
         if self.tic == 0:
-            print('_vanguard')
+            #print('_vanguard')
             for champ in champs:
                 self.hexes[champ[0],champ[1],7] += effect
