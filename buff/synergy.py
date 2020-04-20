@@ -35,6 +35,7 @@ class Synergy:
         self.demol_skilled = demol_skilled # later
         self.protector_skillcast = protector_skillcast
         self.is_pirate,self.is_sniper,self.is_void = False,False,False
+        self.is_starguard,self.is_protector = False,False
         self.functions = [self._celestial,self._chrono,self._cybernatic,self._dark_star,
             self._mech_pilot,self._rebel,self._space_pirate,self._star_guardian,
             self._valkyrie,self._void,self._blademaster,self._blaster,self._brawler,
@@ -133,6 +134,7 @@ class Synergy:
                 self.pirate_item += np.random.choice(items,1)[0]
     def _star_guardian(self,champs,effect):
         #print('_star_guardian')
+        self.is_starguard = True
         for champ in champs:
             self.hexes[champ[0],champ[1],3] += self.star_skilled * effect
     def _valkyrie(self,champs,effect):
@@ -204,6 +206,7 @@ class Synergy:
                 self.hexes[champ[0],champ[1],8] += effect
     def _protector(self,champs,effect):
         #print('_protector')
+        self.is_protector = True
         for prot in self.protector_skillcast:
             self.hexes[prot[0],prot[1],2] += self.start_hexes[prot[0],prot[1],2]*effect
             self.protector_maintain[prot] += [self.start_hexes[prot[0],prot[1],2]*effect]

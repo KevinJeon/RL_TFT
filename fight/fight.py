@@ -15,7 +15,7 @@ class Fight:
         self.mysyn = mysyn
         self.myinfo = myinfo
         self.player_synergy = mysyn
-        hexes = np.zeros((7,8,25))
+        hexes = np.zeros((7,8,26))
         self.opparr = [(6-oa[0],7-oa[1]) for oa in myarr]
         self.start_hexes = self._assign_hexes(hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
             mynum,self.opparr,myitems,mysyn,myinfo,myskill)
@@ -31,8 +31,9 @@ class Fight:
             mana = 1
         else:
             mana = 0
-        for mn,ma,mitem,minf,on,oa,oitem,oinf in \
-            zip(mynum,myarr,myitems,myinfo,oppnum,opparr,oppitems,oppinfo):
+        for mu,mn,ma,mitem,minf,ou,on,oa,oitem,oinf in \
+            zip(self.myunits,mynum,myarr,myitems,myinfo,self.myunits,oppnum,
+                opparr,oppitems,oppinfo):
             hexes[ma[0],ma[1],0] = 1
             hexes[oa[0],oa[1],0] = -1
             hexes[ma[0],ma[1],1] = mn
@@ -52,7 +53,7 @@ class Fight:
             hexes[ma[0],ma[1],8] = minf['magical_resistance']
             hexes[oa[0],oa[1],8] = oinf['magical_resistance']
             # index 9 is is_skill
-            # index 10 is sklll damage
+            # index 10 is sklll damage - config
             # index 11 is health recovery by damage
             # index 12 is sparring prob
             hexes[oa[0],oa[1],13] = 0.2 # index 13 is critical probability
@@ -68,10 +69,12 @@ class Fight:
                 hexes[oa[0],oa[1],16] = oinf['synergy'][2]
             else:
                 hexes[oa[0],oa[1],16] = -1
-            # index 17 is is_stunned
+            hexes[ma[0],ma[1],17] = int(mu[-1])
+            hexes[oa[0],oa[1],17] = int(ou[-1])
+            # index 18 is level
             for c,(m,o) in enumerate(zip(mitem,oitem)):
-                hexes[ma[0],ma[1],18+c] = m
-                hexes[oa[0],oa[1],18+c] = o
+                hexes[ma[0],ma[1],19+c] = m
+                hexes[oa[0],oa[1],19+c] = o
             # synergy fields
         return hexes
     def _read_hexes(self,hexes):
@@ -102,12 +105,24 @@ class Fight:
                 moved[ind] -= 1
         return moved
     def _one_champ_tic(self,hexes,attack_range,arr,you,opp,enemies,tic,
-        void=False,sniper=False,pirate=False):
+        void=False,sniper=False,pirate=False,starguard=False,protector=False):
         tiles = np.tile(np.array(arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
-        if attack_range >= nearest_dist:
+        if hexes[arr[0],arr[1],9] == 1:
+            Skill(hexes,arr).cast()
+            if starguard:
+                if you == 1:
+                    self.mysyns['star_skilled'] += 1
+                elif you == -1:
+                    self.oppsyns['star_skilled'] += 1
+            if protector:
+                if you == 1:
+                    self.mysyns['protector_skillcast'].append([arr[0],arr[1]])
+                elif you == -1:
+                    self.oppsyns['protector_skillcast'].append([arm[0],arr[1]])
+        elif attack_range >= nearest_dist:
             damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
             if void:
                 damage = hexes[arr[0],arr[1],5]
@@ -162,27 +177,6 @@ class Fight:
             cur_mana = 0
         hexes[arr[0],arr[1],3] = cur_mana
         return hexes,is_skill
-    def _skill(self,hexes,you,n):
-        '''
-        if skill use, use one tic
-        - todo :
-        단순 스킬 데미지 적용
-        '''
-        skill = np.where(hexes[:,:,9]>=1)
-        skill_xy = [[x,y] for x,y in zip(skill[0],skill[1])]
-        for ski in skill_xy:
-            hexes[ski[0],ski[1],9] = 0
-            if (hexes[ski[0],ski[1],15] ==7) or (hexes[ski[0],ski[1],14] ==7):
-                if you == 1:
-                    self.mysyns['star_skilled'] += 1
-                elif you == -1:
-                    self.oppsyns['star_skilled'] += 1
-            if (hexes[ski[0],ski[1],15] ==19) or (hexes[ski[0],ski[1],14] ==19):
-                if you == 1:
-                    self.mysyns['protector_skillcast'].append([ski[0],ski[1]])
-                elif you == -1:
-                    self.oppsyns['protector_skillcast'].append([ski[0],ski[1]])
-        return hexes
     def _is_who(self,hexes,arr,synergy):
         if (hexes[arr[0],arr[1],14]==synergy) or (hexes[arr[0],arr[1],15]==synergy):
             is_who = True
@@ -190,19 +184,21 @@ class Fight:
             is_who = False
         return is_who
     def _syn_tic(self,hexes,syns,arr):
-        torf = [False]*3
+        torf = [False]*5
         if syns.is_sniper:
             torf[0] = self._is_who(hexes,arr,19)
         elif syns.is_pirate:
             torf[1] = self._is_who(hexes,arr,6)
         elif syns.is_void:
             torf[2] = self._is_who(hexes,arr,9)
+        elif syns.is_starguard:
+            torf[3] = self._is_who(hexes,arr,)
+        elif syns.is_protector:
+            torf[4] = self._is_who(hexes,arr,)
         return torf
     def _fight_tic(self,hexes,n,draw=False,*kwargs):
         '''2 tic = 1 seconds'''
         tic = 2
-        hexes = self._skill(hexes,1,n)
-        hexes = self._skill(hexes,-1,n)
         attack_infos = []
         self.mysyns['pirate_kill'] = 0
         self.mysyns['star_skilled'] = 0

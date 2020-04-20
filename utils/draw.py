@@ -49,7 +49,7 @@ def draw_chess(hexes,maxhexes,imgname,attack_infos):
         cur_mana = hexes[p[0],p[1],3]
         tot_mana = maxhexes[p[0],p[1],3]
         is_skill = hexes[p[0],p[1],9]
-        item_ind = hexes[p[0],p[1],18:]
+        item_ind = hexes[p[0],p[1],19:]
         items = set([item_name[int(ind)] for ind in item_ind])
         if is_skill == 1:
             skill = 'already'
