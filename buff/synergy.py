@@ -178,7 +178,7 @@ class Synergy:
     def _demolitionist(self,champs,effect):
         #print('_demolitionist')
         for skilled in self.demol_skilled:
-            self.hexes[skilled[0],skilled[1],17] = 1
+            self.hexes[skilled[0],skilled[1],18] = 2 # stunned for 2 tics
     def _infiltrator(self,champs,effect):
         #print('_infiltrator')
         if self.tic == 0:

@@ -2,6 +2,7 @@ import numpy as np
 import copy,os
 from utils.draw import draw_chess,make_video,find_name
 from buff.synergy import Synergy
+from fight.skill import Skill
 class Fight:
     '''
     '''
@@ -71,11 +72,10 @@ class Fight:
                 hexes[oa[0],oa[1],16] = -1
             hexes[ma[0],ma[1],17] = int(mu[-1])
             hexes[oa[0],oa[1],17] = int(ou[-1])
-            # index 18 is level
+            # index 18 is stunned time
             for c,(m,o) in enumerate(zip(mitem,oitem)):
                 hexes[ma[0],ma[1],19+c] = m
                 hexes[oa[0],oa[1],19+c] = o
-            # synergy fields
         return hexes
     def _read_hexes(self,hexes):
         status = hexes[:,:,0]
@@ -111,7 +111,7 @@ class Fight:
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
         if hexes[arr[0],arr[1],9] == 1:
-            Skill(hexes,arr).cast()
+            #Skill(hexes,arr,hexes[arr[0],arr[1],17]).cast(opp)
             if starguard:
                 if you == 1:
                     self.mysyns['star_skilled'] += 1
@@ -215,16 +215,16 @@ class Fight:
             oar = hexes[oa[0],oa[1],4]
             oxs,oys = np.where(mark==1)
             oa_enemies = np.array([[x,y] for x,y in zip(oxs,oys)])
-            osni,opir,ovoi = self._syn_tic(hexes,self.oppsyn_infos,oa)
-            msni,mpir,mvoi = self._syn_tic(hexes,self.mysyn_infos,ma)
+            osni,opir,ovoi,osta,opro = self._syn_tic(hexes,self.oppsyn_infos,oa)
+            msni,mpir,mvoi,msta,mpro = self._syn_tic(hexes,self.mysyn_infos,ma)
             hexes,attack_info = self._one_champ_tic(hexes,oar,oa,-1,1,oa_enemies,
-                tic,sniper=osni,pirate=opir,void=ovoi)
+                tic,sniper=osni,pirate=opir,void=ovoi,starguard=osta,protector=opro)
             mark = hexes[:,:,0]
             mxs,mys=np.where(mark==-1)
             ma_enemies = np.array([[x,y] for x,y in zip(mxs,mys)])
             attack_infos.append(attack_info)
             hexes,attack_info = self._one_champ_tic(hexes,mar,ma,1,-1,ma_enemies,
-                tic,sniper=msni,pirate=mpir,void=mvoi)
+                tic,sniper=msni,pirate=mpir,void=mvoi,starguard=msta,protector=mpro)
             attack_infos.append(attack_info)
         self._read_hexes(hexes)
         skill = None
@@ -300,7 +300,7 @@ class Fight:
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
-            self._fight_tic(self.cur_hexes,n,draw=True)
+            self._fight_tic(self.cur_hexes,n,draw=False)
             self._die()
             notend,win,life_change = self._end()
             n += 1

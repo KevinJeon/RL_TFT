@@ -7,7 +7,7 @@ champ_state_info = dict(
     zoe=dict(name='Zoe',cost=1,elem=[7,20]),
     ziggs=dict(name='Ziggs',cost=1,elem=[5,13]),
     xayah=dict(name='Xayah',cost=1,elem=[0,10]),
-    twistedfate=dict(name='TwistedFate',cost=1,elem=[1,20]),
+    twistedfate=dict(name='Twistedfate',cost=1,elem=[1,20]),
     poppy=dict(name='Poppy',cost=1,elem=[7,22]),
     malphite=dict(name='Malphite',cost=1,elem=[5,12]),
     leona=dict(name='Leona',cost=1,elem=[2,22]),
@@ -57,7 +57,7 @@ champ_state_info = dict(
     aurelion_sol=dict(name='Aurelion_Sol',cost=5,elem=[5,21]),
     )
 champ_cost_info = dict(
-    c1=['zoe','ziggs','xayah','twistedFate','poppy','malphite',
+    c1=['zoe','ziggs','xayah','twistedfate','poppy','malphite',
         'leona','khazix','jarvan_iv','graves','fiora','caitlyn'],
     c2=['yasuo','xin_zhao','sona','shen','rakan','mordekaiser','lucian',
         'kaisa','darius','blitzcrank','annie','ahri'],
