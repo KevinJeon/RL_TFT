@@ -3,7 +3,7 @@ import config_3 as cfg
 
 class Synergy:
     def __init__(self,hexes,start_hexes,mysyn,tic,arrs,opparrs,ds_died=False,
-        mech_died=[False,'init'],pirate_kill=0,star_skilled=0,valkyrie_target=False,
+        mech_died=[False,'init'],pirate_kill=0,star_skilled=0,valkyrie_target=[],
         demol_skilled=False,protector_skillcast=[],protector_maintain=[]):
         '''
         hexes : chess board
@@ -35,7 +35,7 @@ class Synergy:
         self.demol_skilled = demol_skilled # later
         self.protector_skillcast = protector_skillcast
         self.is_pirate,self.is_sniper,self.is_void = False,False,False
-        self.is_starguard,self.is_protector = False,False
+        self.is_starguard,self.is_protector,self.is_valkyrie = False,False,False
         self.functions = [self._celestial,self._chrono,self._cybernatic,self._dark_star,
             self._mech_pilot,self._rebel,self._space_pirate,self._star_guardian,
             self._valkyrie,self._void,self._blademaster,self._blaster,self._brawler,
@@ -209,8 +209,6 @@ class Synergy:
         self.is_protector = True
         for prot in self.protector_skillcast:
             self.hexes[prot[0],prot[1],2] += self.start_hexes[prot[0],prot[1],2]*effect
-            self.protector_maintain[prot] += [self.start_hexes[prot[0],prot[1],2]*effect]
-            self.protector_maintain[prot][0] -= 1
             '''disappear shield later'''
     def _sniper(self,champs,effect):
         self.is_sniper = True

@@ -1,6 +1,8 @@
-from env import TFT_env      
+from env import TFT_env
 import config_3 as cfg
 import numpy as np
+from utils.draw import make_video
+import os
 def main():
     keys = dict()
     for k,i in cfg.__dict__.items():
@@ -37,3 +39,6 @@ def main():
         print(u,i)
 if __name__ == '__main__':
     main()
+    folders = os.listdir('./fig')
+    i = np.random.choice(len(folders),1)[0]
+    make_video('./fig/{}'.format(folders[i]),'./fig/ex.avi')
