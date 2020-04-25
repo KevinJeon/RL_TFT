@@ -2,6 +2,7 @@
 import config_3 as cfg
 import numpy as np
 from fight.fight import Fight
+from buff.items import Item
 # env
 '''
 to do
@@ -309,6 +310,7 @@ class TFT_env(object):
                 tofill -= 1
     def _assign_item(self):
         1 == 1
+        items = Item(self.)
     def play_round(self,act):
         result = 'sushi'
         if self.cur_round == '1-1':

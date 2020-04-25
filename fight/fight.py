@@ -316,7 +316,7 @@ class Fight:
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
-            self._fight_tic(self.cur_hexes,n,draw=True)
+            self._fight_tic(self.cur_hexes,n,draw=False)
             self._die()
             notend,win,life_change = self._end()
             n += 1
