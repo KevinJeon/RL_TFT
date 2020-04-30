@@ -36,6 +36,7 @@ class Synergy:
         self.protector_skillcast = protector_skillcast
         self.is_pirate,self.is_sniper,self.is_void = False,False,False
         self.is_starguard,self.is_protector,self.is_valkyrie = False,False,False
+        self.is_infil = False
         self.functions = [self._celestial,self._chrono,self._cybernatic,self._dark_star,
             self._mech_pilot,self._rebel,self._space_pirate,self._star_guardian,
             self._valkyrie,self._void,self._blademaster,self._blaster,self._brawler,
@@ -181,6 +182,7 @@ class Synergy:
             self.hexes[skilled[0],skilled[1],18] = 2 # stunned for 2 tics
     def _infiltrator(self,champs,effect):
         #print('_infiltrator')
+        self.is_infil = True
         if self.tic == 0:
             '''
             move later

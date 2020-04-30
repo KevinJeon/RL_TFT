@@ -1,7 +1,7 @@
 import numpy as np
 
 class Item:
-    def __init__(self,item_assign):
+    def __init__(self,item_assign,stats):
         self.subitem = np.zeros(13)
         self.subitem[5] = 15
         self.subitem[6] = 0.15
@@ -12,18 +12,70 @@ class Item:
         self.subitem[2] = 200
         self.subitem[9] = 0
         self.subitem[12] = 0.1
+        self.stat_infos = {2:'health',3:'mana',5:'attack_damage',6:'attack_speed',
+            7:'armor',8:'magical_resistance',9:'no',10:'skill',12:'dodge'}
         #items
         self.deathblade= False
         self.force_of_nature = 0
-    def update(self,champs):
-        for i in range(3):
-            for c in champs:
-                i1 = self.items[c[0],c[1],19+2*i]
-                i2 = self.items[c[0],c[1],20+2*i]
-            if not 0 in [i1,i2]:
-                self._merge_item(c,i1,i2)
-    def _merge_item(self,c,i1,i2):
-        1 == 1
+        self._make_table()
+        self.stats = self._update(item_assign,stats)
+    def _update(self,assigned_items,stats):
+        for items,stat in zip(assigned_items,stats):
+            sub = 0
+            for item in items:
+                sub += 1
+                if item == 9:
+                    continue
+                elif item == 12:
+                    stat['critical'] += self.subitem[item]
+                    stat['dodge'] += self.subitem[item]
+                elif item == 3:
+                    stat['mana'][0] += self.subitem[item]
+                else:
+                    stat[self.stat_infos[item]] += self.subitem[item]
+                if sub == 2:
+                    sub = 0
+                    stat = self._merge_item(stat, i1, i2)
+        return stats
+    def _make_table(self):
+        items = [2,3,5,6,7,8,9,10,12]
+        health = [self._warmogs_armor,self._redemption,self._zekes_herald,self._zzrot_portal,
+            self._red_buff,self._zephyr,self._protectors_chestguard,self._morellonomicon,
+            self._trap_claw]
+        mana = [self._redemption,self._seraphs_embrace,self._spear_of_shojin,
+            self._statikk_shiv,self._frozen_heart,self._chalice_of_favor,self._star_guardians_charm,
+            self._ludens_echo,self._hand_of_justice]
+        attack_damage = [self._zekes_herald,self._spear_of_shojin,self._death_blade,
+            self._giant_slayer,self._guardian_angel,self._blood_thirster,self._blade_of_the_ruined_king,
+            self._hextech_gunblade,self._infinity_edge]
+        attack_speed = [self._zzrot_portal,self._statikk_shiv,self._giant_slayer,
+            self._rapid_firecannon,self._titans_resolve,self._runnans_hurricane,
+            self._infiltrators_talons,self._guinsoos_rageblade,self._last_whisper]
+        armor = [self._red_buff,self._frozen_heart,self._guardian_angel,self._titans_resolve,
+            self._bramble_vest,self._sword_breaker,self._rebel_medal,self._locket_of_the_iron_solari,
+            self._shroud_of_stillness]
+        magical_resistance = [self._zephyr,self._chalice_of_favor,self._blood_thirster,
+            self._runnans_hurricane,self._sword_breaker,self._dragons_claw,self._celestial_orb,
+            self._ionic_spark,self._quicksilver]
+        spatula = [self._protectors_chestguard,self._star_guardians_charm,
+            self._blade_of_the_ruined_king,self._infiltrators_talons,self._rebel_medal,
+            self._celestial_orb,self._force_of_nature,self._demolitionists_charge,
+            self._dark_stars_heart]
+        skill = [self._morellonomicon,self._ludens_echo,self._hextech_gunblade,
+            self._locket_of_the_iron_solari,self._ionic_spark,self._demolitionists_charge,
+            self._rabadons_deathcap,self._jeweled_gauntlet]
+        dodge_cri = [self._trap_claw,self._hand_of_justice,self._infinity_edge,
+            self._last_whisper,self._shroud_of_stillness,self._quicksilver,self._dark_stars_heart,
+            self._jeweled_gauntlet,self._thiefs_gloves]
+        tables = [health,mana,attack_damage,attack_speed,armor,magical_resistance,
+            spatula,skill,dodge_cri]
+        self.item_table = list(np.zeros((13,13)))
+        for i in items:
+            for j in items:
+                self.item_table[i][j] = tables[i][j]
+    def _merge_item(self,stat,i1,i2):
+        mixed_item = self.item_table[i1][i2]
+        stat['item'] = mixed_item
     def _death_blade(self,c):
         1 == 1
     def _giant_slayer(self,c):

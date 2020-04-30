@@ -16,19 +16,18 @@ to do
 4. 시너지
     4-1. 시너지 설명 및 수치 추가 - done
     4-2. 시너지 함수 필요 - 나중에 구현 후 해야할 것
-3. item 할당과 속성만, 융합은 x
-    3-1. item 할당만 - done
-    3-2. random 하게 fight에 올리고 synergy fight unit에 맞게 적용
-    3-3. item 네이밍 함수, item 융합 함수
-4. fight
-    4-1. 1 tic에 대한 싸움 구현 2 tic = 1 sec
-        4-1-1. 최소 거리 상대 찾고 attack 한 번 - done
-        4-1-2. 최소 거리 상대 없을 시, 방향 따라 움직이는 _move  함수 - done
-    4-2. total fight에 대한 구현
-        4-2-1. 단순 공격 상황에서 틱 기반으로 움직이고, 공격하며 라운드 종료까지 구현 - done
-        4-2-2. 마나 함수 구현 - done
-5
-    7-1. 몹 라운드
+5. item 할당과 속성만, 융합은 x
+    5-1. item 할당만 - done
+    5-2. random 하게 fight에 올리고 synergy fight unit에 맞게 적용
+    5-3. item 네이밍 함수, item 융합 함수
+6. fight
+    6-1. 1 tic에 대한 싸움 구현 2 tic = 1 sec
+        6-1-1. 최소 거리 상대 찾고 attack 한 번 - done
+        6-1-2. 최소 거리 상대 없을 시, 방향 따라 움직이는 _move  함수 - done
+    6-2. total fight에 대한 구현
+        6-2-1. 단순 공격 상황에서 틱 기반으로 움직이고, 공격하며 라운드 종료까지 구현 - done
+        6-2-2. 마나 함수 구현 - done
+7-1. 몹 라운드
 --to fix--
 1. move 시, 잘 움직이는 것
 '''
@@ -55,7 +54,7 @@ class TFT_env(object):
         self.champ_level_info = champ_level_info
         self.cur_round = '1-1'
         self.synergy_info = synergy_info
-        self.items = [0,1,2,3,7,8,9,10,11,12]
+        self.items = [2,3,5,6,7,8,9,10,12]
         self.elements = elements
         # player
         self.need_xp = [2,4,8,14,24,44,76,126,192]
@@ -309,8 +308,7 @@ class TFT_env(object):
                 self.fight_arrange.append((hex_x,hex_y))
                 tofill -= 1
     def _assign_item(self):
-        1 == 1
-        items = Item(self.)
+        items = Item(self.fight_items,self.fight_infos)
     def play_round(self,act):
         result = 'sushi'
         if self.cur_round == '1-1':

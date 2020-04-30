@@ -1,10 +1,11 @@
 import numpy as np
 import copy
 class Skill:
-    def __init__(self,hexes,maxhexes,arr):
+    def __init__(self,hexes,maxhexes,arr,tic):
         self.hexes = hexes
         self.maxhexes = maxhexes
         self.arr = arr
+        self.tic = tic
         self.skills = [self._zoe,self._ziggs,self._xayah,self._twistedfate,self._poppy,
             self._malphite,self._leona,self._khazix,self._jarvan_iv,self._graves,
             self._fiora,self._caitlyn,self._yasuo,self._xin_zhao,self._sona,self._shen,
@@ -80,8 +81,9 @@ class Skill:
     def _poppy(self,level,enemies,damage=[100,175,250],shield=[200,350,500]):
         '''continuous is later for 4 tic'''
     def _malphite(self,level,enemies,shield=[0.4,0.45,0.5]):
-        self.hexes[self.arr[0],self.arr[1],2] += \
-            self.hexes[self.arr[0],self.arr[1],2]*shield[level]
+        if self.tic == 1:
+            self.hexes[self.arr[0],self.arr[1],2] += \
+                self.hexes[self.arr[0],self.arr[1],2]*shield[level]
     def _leona(self,level,enemies,shield=[40,80,120]):
         '''continuous is later for 8 tic'''
     def _khazix(self,level,enemies,damage=[175,250,400],bonus=[600,800,1350]):
@@ -150,6 +152,8 @@ class Skill:
         if len(inds) == 0:
             target = []
         else:
+            print(inds)
+            print(len(inds))
             targets = [enemies[int(i)] for i in list(inds)]
         for t in targets:
             self.hexes[t[0],t[1],2] -= (50*hit[level] - self.hexes[t[0],t[1],8])/2
