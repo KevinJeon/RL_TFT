@@ -148,13 +148,13 @@ class Skill:
     def _kaisa(self,level,enemies,hit=[4,6,9]):
         tiles = np.tile(np.array(self.arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
-        inds = np.where(dist<=2)
+        inds = list(np.where(dist<=2)[0])
         if len(inds) == 0:
-            target = []
+            targets = []
         else:
             print(inds)
             print(len(inds))
-            targets = [enemies[int(i)] for i in list(inds)]
+            targets = [enemies[int(i)] for i in inds]
         for t in targets:
             self.hexes[t[0],t[1],2] -= (50*hit[level] - self.hexes[t[0],t[1],8])/2
     def _darius(self,level,enemies,damage=[400,500,750]):
@@ -289,6 +289,7 @@ class Skill:
             self.hexes[tx,ty,18] = 3
     def _chogath(self,level,enemies,damage=[150,250,2000],stun=[4,4,8]):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+        print(enemies)
         tx,ty = np.random.choice(enemies,1)[0]
         x1,y1,x2,y2 = self._boundary(tx,ty,-3,4)
         targets = [[x,y] for x,y in zip(xy[0],xy[1])]

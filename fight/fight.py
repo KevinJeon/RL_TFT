@@ -6,27 +6,35 @@ from fight.skill import Skill
 class Fight:
     '''
     '''
-    def __init__(self,myunits,mynum,myarr,myitems,mysyn,myinfo,cur_round):
+    def __init__(self,my,opp,cur_round):
         myskill = None
         self.cur_round = cur_round
-        self.myunits = myunits
-        self.mynum = mynum
-        self.myarr = myarr
-        self.myitems = myitems
-        self.mysyn = mysyn
-        self.myinfo = myinfo
-        self.player_synergy = mysyn
+        # first agent info
+        self.myunits = my.fight_units
+        self.mynum = my.fight_num
+        self.myarr = my.fight_arrange
+        self.myitems = my.fight_items
+        self.mysyn = my.player_synergy
+        self.myinfo = my.fight_infos
+        # second agent info
+        self.oppunits = opp.fight_units
+        self.oppnum = opp.fight_num
+        self.opparr = [(6-oa[0],7-oa[1]) for oa in opp.fight_arrange]
+        self.oppitems = opp.fight_items
+        self.oppsyn = opp.player_synergy
+        self.oppinfo = opp.fight_infos
         hexes1 = np.zeros((7,8,30))
         hexes2 = np.zeros((7,8,30))
-        self.opparr = [(6-oa[0],7-oa[1]) for oa in myarr]
-        self.start_hexes = self._assign_hexes(hexes1,mynum,myarr,myitems,mysyn,myinfo,myskill,
-            mynum,self.opparr,myitems,mysyn,myinfo,myskill,max=True)
-        self.cur_hexes = self._assign_hexes(hexes2,mynum,myarr,myitems,mysyn,myinfo,myskill,
-            mynum,self.opparr,myitems,mysyn,myinfo,myskill,max=False)
+        self.start_hexes = self._assign_hexes(hexes1,self.mynum,self.myarr,self.myitems,
+            self.mysyn,self.myinfo,self.oppnum,self.opparr,self.oppitems,self.oppsyn,
+            self.oppinfo,max=True)
+        self.cur_hexes = self._assign_hexes(hexes1,self.mynum,self.myarr,self.myitems,
+            self.mysyn,self.myinfo,self.oppnum,self.opparr,self.oppitems,self.oppsyn,
+            self.oppinfo,max=False)
         self.mysyns = dict()
         self.oppsyns = dict()
-    def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,myskill,
-        oppnum,opparr,oppitems,oppsyn,oppinfo,oppskill,max=True):
+    def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,
+        oppnum,opparr,oppitems,oppsyn,oppinfo,max=True):
         '''
         '''
         if max:

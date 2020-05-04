@@ -39,39 +39,40 @@ class Item:
         return stats
     def _make_table(self):
         items = [2,3,5,6,7,8,9,10,12]
-        health = [self._warmogs_armor,self._redemption,self._zekes_herald,self._zzrot_portal,
-            self._red_buff,self._zephyr,self._protectors_chestguard,self._morellonomicon,
-            self._trap_claw]
-        mana = [self._redemption,self._seraphs_embrace,self._spear_of_shojin,
+        health = [0,0,self._warmogs_armor,self._redemption,0,self._zekes_herald,
+            self._zzrot_portal,self._red_buff,self._zephyr,self._protectors_chestguard,
+            self._morellonomicon,0,self._trap_claw]
+        mana = [0,0,self._redemption,self._seraphs_embrace,0,self._spear_of_shojin,
             self._statikk_shiv,self._frozen_heart,self._chalice_of_favor,self._star_guardians_charm,
-            self._ludens_echo,self._hand_of_justice]
-        attack_damage = [self._zekes_herald,self._spear_of_shojin,self._death_blade,
+            self._ludens_echo,0,self._hand_of_justice]
+        attack_damage = [0,0,self._zekes_herald,self._spear_of_shojin,0,self._death_blade,
             self._giant_slayer,self._guardian_angel,self._blood_thirster,self._blade_of_the_ruined_king,
-            self._hextech_gunblade,self._infinity_edge]
-        attack_speed = [self._zzrot_portal,self._statikk_shiv,self._giant_slayer,
+            self._hextech_gunblade,0,self._infinity_edge]
+        attack_speed = [0,0,self._zzrot_portal,self._statikk_shiv,0,self._giant_slayer,
             self._rapid_firecannon,self._titans_resolve,self._runnans_hurricane,
-            self._infiltrators_talons,self._guinsoos_rageblade,self._last_whisper]
-        armor = [self._red_buff,self._frozen_heart,self._guardian_angel,self._titans_resolve,
+            self._infiltrators_talons,self._guinsoos_rageblade,0,self._last_whisper]
+        armor = [0,0,self._red_buff,self._frozen_heart,0,self._guardian_angel,self._titans_resolve,
             self._bramble_vest,self._sword_breaker,self._rebel_medal,self._locket_of_the_iron_solari,
-            self._shroud_of_stillness]
-        magical_resistance = [self._zephyr,self._chalice_of_favor,self._blood_thirster,
+            0,self._shroud_of_stillness]
+        magical_resistance = [0,0,self._zephyr,self._chalice_of_favor,0,self._blood_thirster,
             self._runnans_hurricane,self._sword_breaker,self._dragons_claw,self._celestial_orb,
-            self._ionic_spark,self._quicksilver]
-        spatula = [self._protectors_chestguard,self._star_guardians_charm,
+            self._ionic_spark,0,self._quicksilver]
+        spatula = [0,0,self._protectors_chestguard,self._star_guardians_charm,0,
             self._blade_of_the_ruined_king,self._infiltrators_talons,self._rebel_medal,
             self._celestial_orb,self._force_of_nature,self._demolitionists_charge,
-            self._dark_stars_heart]
-        skill = [self._morellonomicon,self._ludens_echo,self._hextech_gunblade,
-            self._locket_of_the_iron_solari,self._ionic_spark,self._demolitionists_charge,
-            self._rabadons_deathcap,self._jeweled_gauntlet]
-        dodge_cri = [self._trap_claw,self._hand_of_justice,self._infinity_edge,
+            0,self._dark_stars_heart]
+        skill = [0,0,self._morellonomicon,self._ludens_echo,0,self._hextech_gunblade,
+            self._guinsoos_rageblade,self._locket_of_the_iron_solari,self._ionic_spark,
+            self._demolitionists_charge,self._rabadons_deathcap,0,self._jeweled_gauntlet]
+        dodge_cri = [0,0,self._trap_claw,self._hand_of_justice,0,self._infinity_edge,
             self._last_whisper,self._shroud_of_stillness,self._quicksilver,self._dark_stars_heart,
-            self._jeweled_gauntlet,self._thiefs_gloves]
-        tables = [health,mana,attack_damage,attack_speed,armor,magical_resistance,
-            spatula,skill,dodge_cri]
+            self._jeweled_gauntlet,0,self._thiefs_gloves]
+        tables = [0,0,health,mana,0,attack_damage,attack_speed,armor,magical_resistance,
+            spatula,skill,0,dodge_cri]
         self.item_table = list(np.zeros((13,13)))
         for i in items:
             for j in items:
+                self.item_table[i] = list(self.item_table[i])
                 self.item_table[i][j] = tables[i][j]
     def _merge_item(self,stat,i1,i2):
         mixed_item = self.item_table[i1][i2]
