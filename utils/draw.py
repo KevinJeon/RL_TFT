@@ -4,11 +4,26 @@ import config_3 as cfg
 def make_video(dir,videoname):
     frames = []
     cap = cv2.VideoCapture(0)
-    out = cv2.VideoWriter(videoname,cv2.VideoWriter_fourcc(*'DIVX'),3,(1920,1920))
-    for fn in os.listdir(dir):
-        img = cv2.imread(os.path.join(dir,fn))
-        print(fn)
-        out.write(img)
+    out = cv2.VideoWriter(videoname,cv2.VideoWriter_fourcc(*'DIVX'),3,(1921,480))
+    fights = os.listdir(dir)
+    frames = dict()
+    lens = []
+    for fight in fights:
+        imgs = os.listdir(os.path.join(dir,fight))
+        frames[fight] = imgs
+        lens.append(len(imgs))
+    keys = frames.keys()
+    for i in range(max(lens)):
+        ith_frame = np.zeros((480,1,3))
+        for n,k in  enumerate(keys):
+            if lens[n] <= i:
+                img = np.zeros((480,480,3)).astype('float')
+            else:
+                print(lens[n],i)
+                fn = frames[k][i]
+                img = cv2.imread(os.path.join(dir,fight,fn))
+            ith_frame = cv2.hconcat(ith_frame,img)
+        out.write(ith_frame)
     out.release()
     cap.release()
     cv2.destroyAllWindows()
@@ -78,6 +93,7 @@ def draw_chess(hexes,maxhexes,imgname,attack_infos):
             damage ='move to'
         img = cv2.putText(img,'{} {} {}'.format(damaging,damage,damaged),
             (st[0],st[1]+90),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),2)
+    img = cv2.resize(img,(480,480))
     cv2.imwrite(imgname,img)
 def make_chess():
     img = np.full((1920,1920,3),255).astype('float')

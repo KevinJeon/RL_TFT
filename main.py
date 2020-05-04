@@ -2,6 +2,7 @@ from env import TFT_env
 import config_3 as cfg
 import numpy as np
 from agent.random_agent import RandomAgent
+from agent.rulebased_agent import RulebasedAgent
 from one_player import Player
 from utils.draw import make_video
 import os
@@ -13,7 +14,8 @@ def main():
     env = TFT_env(**keys)
     # plug-in the player
     rand = RandomAgent
-    agent1 = Player(rand)
+    rule = RulebasedAgent
+    agent1 = Player(rule)
     agent2 = Player(rand)
     agent3 = Player(rand)
     agent4 = Player(rand)
@@ -39,6 +41,6 @@ def main():
     print(msg)
 if __name__ == '__main__':
     main()
-    folders = os.listdir('./fig')
+    #folders = os.listdir('./fig')
     #i = np.random.choice(len(folders),1)[0]
     #make_video('./fig/{}'.format(folders[i]),'./fig/ex.avi')

@@ -5,31 +5,12 @@ from fight.fight import Fight
 from buff.items import Item
 # env
 '''
-to do
-0. 변수, 함수 네이밍 재점검 - done
-1. full round without fight,item,skill,level - done
-    1-1. sell 구현 - done
-2. level champs_levelup - done
-    2-1. 챔피언 레벨 정보 - done
-3. 시너지 단순 네이밍과 등급만 - done
-    3-1. 시너지 묶기 함수화 - done
-4. 시너지
-    4-1. 시너지 설명 및 수치 추가 - done
-    4-2. 시너지 함수 필요 - 나중에 구현 후 해야할 것
-5. item 할당과 속성만, 융합은 x
-    5-1. item 할당만 - done
-    5-2. random 하게 fight에 올리고 synergy fight unit에 맞게 적용
-    5-3. item 네이밍 함수, item 융합 함수
-6. fight
-    6-1. 1 tic에 대한 싸움 구현 2 tic = 1 sec
-        6-1-1. 최소 거리 상대 찾고 attack 한 번 - done
-        6-1-2. 최소 거리 상대 없을 시, 방향 따라 움직이는 _move  함수 - done
-    6-2. total fight에 대한 구현
-        6-2-1. 단순 공격 상황에서 틱 기반으로 움직이고, 공격하며 라운드 종료까지 구현 - done
-        6-2-2. 마나 함수 구현 - done
-7-1. 몹 라운드
---to fix--
-1. move 시, 잘 움직이는 것
+# to do
+1. jhin 4타
+2. 메카 파일럿 스킬 추가
+3. 치명타, 회피 적용
+4. 나머지 스킬 하나씩 완성
+5. 비디오 완성
 '''
 
 class TFT_env(object):
@@ -174,7 +155,7 @@ class TFT_env(object):
                     a2.money += 1
                     self._continuous(a2,True)
                     self._continuous(a1,False)
-                    a1.result(False)
+                    a1.result(True)
                     a2.result(result)
         self._game_over()
         names = [player.name for player in self.players]

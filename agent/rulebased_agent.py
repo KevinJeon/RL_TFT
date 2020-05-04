@@ -1,0 +1,33 @@
+import numpy as np
+class RulebasedAgent:
+
+    def action(money,player_level,five_champs,five_cost,total_units):
+        favorite_syn = ['khazix_1','kaisa_1','rumble_1','annie_1','fizz_1','shaco_1',
+            'ekko_1']
+        a = list(range(9))
+        # base rule
+        if money < 2:
+            ind = a.index(7)
+            del a[ind]
+        if (money < 4) or (player_level == 9):
+            ind = a.index(8)
+            del a[ind]
+        for i in range(5):
+            if (five_champs[i] == False) or (money < five_cost[i]):
+                ind = a.index(i)
+                del a[ind]
+        if total_units:
+            ind = a.index(6)
+            del a[ind]
+        if money <= 0:
+            a = [5]
+        if money <= 50:
+            a = [5]
+        else:
+            for i in range(5):
+                if five_champs[i] in favorite_syn:
+                    ind = a.index(i)
+                    return i
+            return np.random.choice([7,8],1,p=[0.7,0.3])[0]
+
+        return a[0]

@@ -232,6 +232,7 @@ class Player:
         while self.is_prepared != True:
             act = self.agent.action(self.money,self.player_level,self.five_champs,
                 self.five_cost,self.total_units)
+            print(act)
             print(self.act1_spc[act])
             self._before_fight(act)
             if act == 5:
@@ -241,6 +242,7 @@ class Player:
                 self._update_synergy()
     def result(self,result):
         msg = ('-----------------------\n'+\
+            '{}\n'+\
             'ROUND {} finish\n'+\
             'Win : {}\n'+\
             'Life : {}\n'+\
@@ -250,6 +252,6 @@ class Player:
             'Continuous : {}\n'+\
             'Synergy : {}\n'+\
             'Items : {}\n'+\
-            '-----------------------').format(self.cur_round,result,self.life,self.player_level,
+            '-----------------------').format(self.name,self.cur_round,result,self.life,self.player_level,
                 self.money,self.fight_units,self.continuous,self.player_synergy,self.fight_items)
         print(msg)

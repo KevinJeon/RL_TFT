@@ -92,6 +92,7 @@ class Synergy:
                     n += 1
         elif self.mech_died[1] == 'init':
             #print('_mech_pilot')
+            print(champs)
             selected = np.random.choice(champs,3)
             xy = np.random.choice(selected,1)[0]
             items = []

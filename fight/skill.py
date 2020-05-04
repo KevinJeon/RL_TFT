@@ -25,6 +25,7 @@ class Skill:
         self.annie = False
         self.gangplank = False
         #effect
+        self.jhin = 0
         self.master_yi = False
         self.kayle = False
         self.jinx = False
@@ -289,9 +290,10 @@ class Skill:
             self.hexes[tx,ty,18] = 3
     def _chogath(self,level,enemies,damage=[150,250,2000],stun=[4,4,8]):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
-        print(enemies)
-        tx,ty = np.random.choice(enemies,1)[0]
+        ind = np.random.choice(len(enemies),1)[0]
+        tx,ty = enemies[ind]
         x1,y1,x2,y2 = self._boundary(tx,ty,-3,4)
+        xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
         targets = [[x,y] for x,y in zip(xy[0],xy[1])]
         for tx,ty in targets:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2

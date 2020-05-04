@@ -16,6 +16,7 @@ class Fight:
         self.myitems = my.fight_items
         self.mysyn = my.player_synergy
         self.myinfo = my.fight_infos
+        self.myname = my.name
         # second agent info
         self.oppunits = opp.fight_units
         self.oppnum = opp.fight_num
@@ -23,6 +24,7 @@ class Fight:
         self.oppitems = opp.fight_items
         self.oppsyn = opp.player_synergy
         self.oppinfo = opp.fight_infos
+        self.oppname = opp.name
         hexes1 = np.zeros((7,8,30))
         hexes2 = np.zeros((7,8,30))
         self.start_hexes = self._assign_hexes(hexes1,self.mynum,self.myarr,self.myitems,
@@ -364,7 +366,8 @@ class Fight:
     def visualize(self,hexes,n,attack_infos):
         if not os.path.exists('./fig/{}'.format('ROUND_'+self.cur_round)):
             os.mkdir('./fig/{}'.format('ROUND_'+self.cur_round))
-        xs,ys = np.meshgrid(np.linspace(1,8,8),np.linspace(1,7,7))
+        if not os.path.exists('./fig/{}/{}vs{}'.format('ROUND_'+self.cur_round,self.myname,self.oppname)):
+            os.mkdir('./fig/{}/{}vs{}'.format('ROUND_'+self.cur_round,self.myname,self.oppname))
         fn = (4 - len(str(n)))*'0' + str(n)
-        imgname = './fig/{}/frame_{}.jpg'.format('ROUND_'+self.cur_round,fn)
+        imgname = './fig/{}/{}vs{}/frame_{}.jpg'.format('ROUND_'+self.cur_round,self.myname,self.oppname,fn)
         draw_chess(hexes,self.start_hexes,imgname,attack_infos)
