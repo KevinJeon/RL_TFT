@@ -15,7 +15,7 @@ class Skill:
             self._karma,self._jayce,self._ezreal,self._ashe,self._wukong,self._velkoz,
             self._soraka,self._kayle,self._jinx,self._jhin,self._irelia,self._fizz,
             self._chogath,self._thresh,self._miss_fortune,self._lulu,self._gangplank,
-            self._ekko,self._aurelion_sol]
+            self._ekko,self._aurelion_sol,self._mech_garren]
         self.myskill = []
         self.oppskill = []
         ##champs
@@ -25,7 +25,6 @@ class Skill:
         self.annie = False
         self.gangplank = False
         #effect
-        self.jhin = 0
         self.master_yi = False
         self.kayle = False
         self.jinx = False
@@ -60,7 +59,10 @@ class Skill:
         xy = np.where(self.hexes[:,:,0]==enemy)
         enemies = [[x,y] for x,y in zip(xy[0],xy[1])]
         self.myopp = self.hexes[self.arr[0],self.arr[1],0]
-        self.skills[int(ind)](int(level),enemies)
+        if ind == 100:
+            self.skills[-1](enemies)
+        else:
+            self.skills[int(ind)](int(level),enemies)
         if self.irel_kill:
             pass
         else:
@@ -80,13 +82,18 @@ class Skill:
     def _twistedfate(self,level,enemies,damage=[200,300,500]):
         '''continuous is later tic for 6 tic'''
     def _poppy(self,level,enemies,damage=[100,175,250],shield=[200,350,500]):
-        '''continuous is later for 4 tic'''
+        tx,ty = self._find_target(enemies)
+        self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+        self.hexes[self.arr[0],self.arr[0],2] += shield[level]
     def _malphite(self,level,enemies,shield=[0.4,0.45,0.5]):
         if self.tic == 1:
             self.hexes[self.arr[0],self.arr[1],2] += \
                 self.hexes[self.arr[0],self.arr[1],2]*shield[level]
     def _leona(self,level,enemies,shield=[40,80,120]):
-        '''continuous is later for 8 tic'''
+        self.hexes[self.arr[0],self.arr[0],7] += 40
+        self.hexes[self.arr[0],self.arr[0],8] += 40
+        self.hexes[self.arr[0],self.arr[0],26] = 8
+
     def _khazix(self,level,enemies,damage=[175,250,400],bonus=[600,800,1350]):
         tx,ty = self._find_target(enemies)
         tiles = np.tile(np.array([tx,ty]),(len(enemies),1))
@@ -262,11 +269,10 @@ class Skill:
         elif self.jinx > 1:
             self.hexes[self.arr[0],self.arr[1],6] += speed[level]
     def _jhin(self,level,enemies,percent=[2.44,3.44,44.44]):
-        if self.jhin == 3:
-            self.hexes[arr[0],arr[1],5] = self.hexes[arr[0],arr[1],5]*percent[level]
-            self.jhin = -1
-        elif self.jhin == 0:
-            self.hexes[arr[0],arr[1],5] = self.hexes[arr[0],arr[1],5]*percent[level]
+        if self.tic % 4 == 0:
+            tx,ty = self._find_target(enemies)
+            self.hexes[tx,ty,2] -= (self.hexes[self.arr[0],self.arr[1],5]*\
+                percent[level]-self.hexes[tx,ty,7])/2
     def _irelia(self,level,enemies,percent=[1.75,2.5,5]):
         '''target is random'''
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
@@ -328,3 +334,12 @@ class Skill:
         xy = np.random.choice(enemies,self.fly)
         for x,y in xy:
             self.hexes[x,y,2] -= (damage[level] - self.hexes[x,y,8])/2
+    def _mech_garren(self,enemies,damage=750,stun=2):
+        enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+        tx,ty = self._find_target(enemies)
+        x1,y1,x2,y2 = self._boundary(tx,ty,-1,2)
+        xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
+        targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+        for tx,ty in targets:
+            self.hexes[tx,ty,2] -= (damage - self.hexes[tx,ty,8])/2
+            self.hexes[tx,ty,18] = stun

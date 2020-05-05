@@ -67,9 +67,12 @@ class Fight:
             hexes[oa[0],oa[1],8] = oinf['magical_resistance']
             # index 9 is is_skill
             # index 10 is sklll damage - config
-            # index 11 is health recovery by damage
-            # index 12 is sparring prob
-            hexes[oa[0],oa[1],13] = 0.2 # index 13 is critical probability
+            hexes[ma[0],ma[1],11] = 0.5 # critical damagepercent
+            hexes[oa[0],oa[1],11] = 0.5
+            hexes[ma[0],ma[1],12] = minf['dodge']
+            hexes[oa[0],oa[1],12] = oinf['dodge']
+            hexes[ma[0],ma[1],13] = minf['critical'] # critical prob
+            hexes[oa[0],oa[1],13] = oinf['critical']
             hexes[ma[0],ma[1],14] = minf['synergy'][0]
             hexes[oa[0],oa[1],14] = oinf['synergy'][0]
             hexes[ma[0],ma[1],15] = minf['synergy'][1]
@@ -82,14 +85,15 @@ class Fight:
                 hexes[oa[0],oa[1],16] = oinf['synergy'][2]
             else:
                 hexes[oa[0],oa[1],16] = -1
-            hexes[ma[0],ma[1],17] = int(mu[-1])
+            hexes[ma[0],ma[1],17] = int(mu[-1]) # level
             hexes[oa[0],oa[1],17] = int(ou[-1])
             # index 18 is stunned time
             for c,(m,o) in enumerate(zip(mitem,oitem)):
                 hexes[ma[0],ma[1],19+c] = m
                 hexes[oa[0],oa[1],19+c] = o
             # index 25 is skill shield
-            # index 26 is skill speed buff
+            # index 26 is shield remain time
+            # index 26 is skill own buff
             # index 27 is skill remain time
         return hexes
     def _read_hexes(self,hexes):
@@ -161,7 +165,6 @@ class Fight:
 
             return hexes,attack_info
         elif attack_range >= nearest_dist:
-            damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
             if void:
                 damage = hexes[arr[0],arr[1],5]
             if sniper:
@@ -169,6 +172,13 @@ class Fight:
                 damage += hexes[arr[0],arr[1],5]*(sum(diff)-1)
             if damage < 0:
                 damage = 0
+            cprob = [1-hexes[arr[0],arr[1],13],hexes[arr[0],arr[1],13]]
+            critical = np.random.choice([0,1],p=cprob)
+            damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
+            damage += critical*(hexes[arr[0],arr[1],11]*(hexes[arr[0],arr[1],5]))
+            dprob = [hexes[enemies[ind][0],enemies[ind][1],12],1-hexes[enemies[ind][0],enemies[ind][1],12]]
+            dodge = np.random.choice([0,1],p=dprob)
+            damage = damage * dodge
             hexes[enemies[ind][0],enemies[ind][1],2] -= damage/tic*hexes[arr[0],arr[1],6]
             self._mana(hexes,arr,hit=True)
             self._mana(hexes,enemies[ind],hit=False)

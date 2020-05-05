@@ -6,11 +6,8 @@ from buff.items import Item
 # env
 '''
 # to do
-1. jhin 4타
-2. 메카 파일럿 스킬 추가
-3. 치명타, 회피 적용
-4. 나머지 스킬 하나씩 완성
-5. 비디오 완성
+1. 스킬 one_champ_tic에서 빠지고 synergy처럼 취급해야함
+2. 비디오 완성
 '''
 
 class TFT_env(object):
