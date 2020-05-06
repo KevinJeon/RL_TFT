@@ -3,6 +3,7 @@ import config_3 as cfg
 import numpy as np
 from fight.fight import Fight
 from buff.items import Item
+import time
 # env
 '''
 # to do
@@ -139,7 +140,14 @@ class TFT_env(object):
                 a1 = self.players[m[0]]
                 a2 = self.players[m[1]]
                 fight = Fight(a1,a2,self.cur_round)
+                fight.my_queue = a1.five_champs
+                fight.my_cost = a1.five_cost
+                fight.my_money = a1.money
+                fight.opp_money = a2.money
                 result,life_change = fight.fight()
+                fight.gui.root.destroy()
+                time.sleep(1)
+                print('finish fight!')
                 if result:
                     a2.life -= life_change
                     a1.money += 1

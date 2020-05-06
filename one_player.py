@@ -53,7 +53,7 @@ class Player:
         champ = champ[:-2]
         for (star,champs) in self.champ_cost_info.items():
             if champ in champs:
-                return cost_info[level]
+                return cost_info[level-1]
             cost_info += 1
     def _money(self):
         '''
@@ -254,4 +254,4 @@ class Player:
             'Items : {}\n'+\
             '-----------------------').format(self.name,self.cur_round,result,self.life,self.player_level,
                 self.money,self.fight_units,self.continuous,self.player_synergy,self.fight_items)
-        print(msg)
+        #print(msg)

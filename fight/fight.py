@@ -1,8 +1,10 @@
 import numpy as np
 import copy,os
 from utils.draw import draw_chess,make_video,find_name
+from utils.view import GUI
 from buff.synergy import Synergy
 from fight.skill import Skill
+import time
 class Fight:
     '''
     '''
@@ -25,8 +27,8 @@ class Fight:
         self.oppsyn = opp.player_synergy
         self.oppinfo = opp.fight_infos
         self.oppname = opp.name
-        hexes1 = np.zeros((7,8,30))
-        hexes2 = np.zeros((7,8,30))
+        hexes1 = np.zeros((7,8,31))
+        hexes2 = np.zeros((7,8,31))
         self.start_hexes = self._assign_hexes(hexes1,self.mynum,self.myarr,self.myitems,
             self.mysyn,self.myinfo,self.oppnum,self.opparr,self.oppitems,self.oppsyn,
             self.oppinfo,max=True)
@@ -44,9 +46,14 @@ class Fight:
         else:
             mana = 0
         print(mana)
+        n = 0
         for mu,mn,ma,mitem,minf,ou,on,oa,oitem,oinf in \
             zip(self.myunits,mynum,myarr,myitems,myinfo,self.myunits,oppnum,
                 opparr,oppitems,oppinfo):
+            n += 1
+            hexes[ma[0],ma[1],-1] = n
+            n += 1
+            hexes[oa[0],oa[1],-1] = n
             hexes[ma[0],ma[1],0] = 1
             hexes[oa[0],oa[1],0] = -1
             hexes[ma[0],ma[1],1] = mn
@@ -170,12 +177,12 @@ class Fight:
             if sniper:
                 diff = abs(tiles[ind]-enemies[ind])
                 damage += hexes[arr[0],arr[1],5]*(sum(diff)-1)
-            if damage < 0:
-                damage = 0
             cprob = [1-hexes[arr[0],arr[1],13],hexes[arr[0],arr[1],13]]
             critical = np.random.choice([0,1],p=cprob)
             damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
             damage += critical*(hexes[arr[0],arr[1],11]*(hexes[arr[0],arr[1],5]))
+            if damage < 0:
+                damage = 0
             dprob = [hexes[enemies[ind][0],enemies[ind][1],12],1-hexes[enemies[ind][0],enemies[ind][1],12]]
             dodge = np.random.choice([0,1],p=dprob)
             damage = damage * dodge
@@ -252,7 +259,7 @@ class Fight:
         elif syns.is_infil:
             torf[6] = self._is_who(hexes,arr,14)
         return torf
-    def _fight_tic(self,hexes,n,draw=False,*kwargs):
+    def _fight_tic(self,hexes,n,draw=False,view=False,*kwargs):
         '''2 tic = 1 seconds'''
         tic = 2
         attack_infos = []
@@ -288,6 +295,8 @@ class Fight:
         skill = None
         if draw:
             self.visualize(hexes,n,attack_infos)
+        if view:
+            self.accumulate()
         return hexes
     def _die(self):
         health = self.cur_hexes[:,:,2]
@@ -355,11 +364,13 @@ class Fight:
         self.start_hexes = copy_hexes
         self.money = 0
         self.item = []
+        self.init_view()
         while notend:
+            print(n)
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
-            self._fight_tic(self.cur_hexes,n,draw=False)
+            self._fight_tic(self.cur_hexes,n,draw=False,view=True)
             self._die()
             notend,win,life_change = self._end()
             n += 1
@@ -381,3 +392,40 @@ class Fight:
         fn = (4 - len(str(n)))*'0' + str(n)
         imgname = './fig/{}/{}vs{}/frame_{}.jpg'.format('ROUND_'+self.cur_round,self.myname,self.oppname,fn)
         draw_chess(hexes,self.start_hexes,imgname,attack_infos)
+    def init_view(self):
+        name = []
+        cost = []
+        is_exist = []
+        for champ,c in zip(self.my_queue,self.my_cost):
+            if champ:
+                name.append(champ)
+                cost.append(c)
+                is_exist.append(True)
+            else:
+                name += [None]
+                cost += [None]
+                is_exist.append(False)
+        infos = self.infos()
+        self.gui = GUI(60,70,cost,name,is_exist,infos,self.my_money,self.opp_money)
+    def accumulate(self):
+        infos = self.infos()
+        self.gui.infos = infos
+        self.gui.update_champs(self.gui.game,infos)
+        self.gui.root.update()
+        time.sleep(0.3)
+    def view(self):
+        sefl.gui.root.mainloop()
+    def infos(self):
+        infos = dict()
+        n = 0
+        for my in self.myarr:
+            ind = self.cur_hexes[my[0],my[1],1]
+            champ = find_name(int(ind))
+            infos[my] = [champ,1,self.cur_hexes[my[0],my[1],-1]]
+            n+=1
+        for opp in self.opparr:
+            ind = self.cur_hexes[opp[0],opp[1],1]
+            champ = find_name(int(ind))
+            infos[opp] = [champ,-1,self.cur_hexes[opp[0],opp[1],-1]]
+            n+=1
+        return infos
