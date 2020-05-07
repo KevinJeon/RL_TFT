@@ -1,6 +1,6 @@
 import numpy as np
 class RandomAgent:
-    def action(money,player_level,five_champs,five_cost,total_units):
+    def bef_action(money,player_level,five_champs,five_cost,total_units):
         a = list(range(9))
         if money < 2:
             ind = a.index(7)
@@ -19,3 +19,5 @@ class RandomAgent:
             a = [5]
         act = np.random.choice(a,1)[0]
         return act
+    def rearr_action(player_level,syns):
+        1 == 1

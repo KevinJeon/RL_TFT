@@ -19,7 +19,7 @@ class GUI:
     nogold = '#3b3b3b'
     battlefield = '#69bf47'
     def __init__(self,x,y,cost=None,name=None,is_exist=None,infos=None,
-        my_money=0,opp_money=0):
+        my_money=0,opp_money=0,title=None,place_table=None):
         # canvas
         self.x = x
         self.y = y
@@ -61,11 +61,43 @@ class GUI:
         # field
         self.game.create_rectangle(self.x*1.5,self.x,self.x*1.5+self.b_w,
             self.x+self.b_h,fill=GUI.battlefield,outline=GUI.black,width=1)
+        # gamename
+        self.game.create_text(self.w/2,10,text=title,fill='black')
+        # make chessboard
         self._make_board(self.game,self.x*1.75)
+        # arrange champs
         self.init_make_champs(self.game,infos)
+        # make place_table
+        self.place = dict()
+        self._make_place(self.game,place_table)
         self.game.pack()
+    def _make_place(self,game,place_table):
+        self.placexy = []
+        place_table = sorted(place_table,key=lambda place : place[1])
+        game.p1 = None
+        game.p2 = None
+        game.p3 = None
+        game.p4 = None
+        game.p5 = None
+        game.p6 = None
+        game.p7 = None
+        game.p8 = None
+        self.imgs = [game.p1,game.p2,game.p3,game.p4,game.p5,
+            game.p6,game.p7,game.p8]
+        for n,(player,life) in enumerate(place_table):
+            img = tk.PhotoImage(file='./utils/icon/player/{}.gif'.format(player))
+            self.imgs[n] = img
+            image_info = self.game.create_image(self.w-30,self.h-38*(n)-30,
+                image=self.imgs[n])
+            text_info1 = game.create_text(self.w-30,self.h-38*(n)-10,text=str(life),
+                fill='black')
+            text_info2 = game.create_text(self.w-53,self.h-38*(n)-30,
+                text=player[0]+player[-1],fill='blue')
+            self.place[player] = [image_info,n,text_info1,text_info2]
+            self.placexy.append([self.w-30,self.h-38*(n)-30,self.w-30,self.h-38*(n)-10,
+                self.w-55,self.h-38*(n)-30])
     def _gold(self,game,data1,data2):
-        dist = 0.3*self.g
+        dist = 0.2*self.g
         clr1,clr2 = GUI.gold,GUI.gold
         money1 = data1 // 10
         money2 = data2 // 10
@@ -101,7 +133,6 @@ class GUI:
         clrs = [GUI.cost1,GUI.cost2,GUI.cost3,GUI.cost4,GUI.cost5]
         imgs = []
         for n in name:
-            print(n)
             if n == None:
                 img = None
             else:
@@ -113,7 +144,6 @@ class GUI:
         game.ph4 = imgs[3]
         game.ph5 = imgs[4]
         imgs = [game.ph1,game.ph2,game.ph3,game.ph4,game.ph5]
-        print(imgs)
         self.photos = self._ready_champs(game)
         for i in range(5):
             if  data[i]==False:
@@ -134,10 +164,11 @@ class GUI:
             else:
                 clr = GUI.red
             img = tk.PhotoImage(file='./utils/icon/{}.gif'.format(name))
-            print('./utils/icon/{}.gif'.format(name))
+            border = game.create_rectangle(xy[1]-25,xy[0]-25,xy[1]+25,xy[0]+25,
+                outline=clr,width=2)
             self.photos[n] = img
             image_info = game.create_image(xy[1],xy[0],image=self.photos[n])
-            self.arr.append([info[2],k,info[0],self.photos[n],image_info])
+            self.arr.append([info[2],k,info[0],self.photos[n],image_info,border])
     def update_champs(self,game,infos):
         hexes = [i[1] for i in self.arr]
         who = [i[0] for i in self.arr]
@@ -145,17 +176,15 @@ class GUI:
             k = str(list(k))
             ind = who.index(info[2])
             if hexes[ind] != k:
-                print('hi!')
                 xy = self.center[k]
                 kk =eval(k)
                 hex = eval(hexes[ind])
                 change = self.center[k]
                 orig = self.center[hexes[ind]]
                 dx,dy = change[1]-orig[1],change[0]-orig[0]
-                print(dx,dy)
                 #dx,dy = kk[0]-hex[0],kk[1]-hex[1]
-                print(dx,dy)
                 game.move(self.arr[ind][4],dx,dy)
+                game.move(self.arr[ind][5],dx,dy)
                 self.arr[ind][1] = k
 
     def _ready_champs(self,game):

@@ -45,7 +45,6 @@ class Fight:
             mana = 1
         else:
             mana = 0
-        print(mana)
         n = 0
         for mu,mn,ma,mitem,minf,ou,on,oa,oitem,oinf in \
             zip(self.myunits,mynum,myarr,myitems,myinfo,self.myunits,oppnum,
@@ -151,12 +150,13 @@ class Fight:
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
-        if (tic == 0) and infiltrator:
+        if (tic == 1) and infiltrator:
             hexes = self._fly_infil(self,hexes,arr,you)
             attack_info = [arrind,'jump to',arr,arrind]
             return hexes,attack_info
         elif hexes[arr[0],arr[1],9] == 1:
-            hexes = Skill(hexes,self.start_hexes,arr,tic).cast(opp)
+            self.skill.arr = arr
+            hexes = self.skill.cast(opp)
             arrind = hexes[arr[0],arr[1],1]
             if starguard:
                 if you == 1:
@@ -172,15 +172,15 @@ class Fight:
 
             return hexes,attack_info
         elif attack_range >= nearest_dist:
+            cprob = [1-hexes[arr[0],arr[1],13],hexes[arr[0],arr[1],13]]
+            critical = np.random.choice([0,1],p=cprob)
+            damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
+            damage += critical*(hexes[arr[0],arr[1],11]*(hexes[arr[0],arr[1],5]))
             if void:
                 damage = hexes[arr[0],arr[1],5]
             if sniper:
                 diff = abs(tiles[ind]-enemies[ind])
                 damage += hexes[arr[0],arr[1],5]*(sum(diff)-1)
-            cprob = [1-hexes[arr[0],arr[1],13],hexes[arr[0],arr[1],13]]
-            critical = np.random.choice([0,1],p=cprob)
-            damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
-            damage += critical*(hexes[arr[0],arr[1],11]*(hexes[arr[0],arr[1],5]))
             if damage < 0:
                 damage = 0
             dprob = [hexes[enemies[ind][0],enemies[ind][1],12],1-hexes[enemies[ind][0],enemies[ind][1],12]]
@@ -271,6 +271,7 @@ class Fight:
         self.oppsyns['star_skilled'] = 0
         self.oppsyns['valkyrie_target'] = []
         self.oppsyns['protector_skillcast'] = []
+        self.skill.tic = n
         for oa,ma in zip(self.opparr,self.myarr):
             oa,ma = list(oa),list(ma)
             mark = hexes[:,:,0]
@@ -298,6 +299,13 @@ class Fight:
         if view:
             self.accumulate()
         return hexes
+    def _off_skill(self):
+        self.cur_hexes[:,:,26] -= 1
+        on_skill = np.where(self.cur_hexes[:,:,26]==0)
+        onx,ony = on_skill
+        for x,y in zip(onx,ony):
+            self.arr = [x,y]
+            self.skill.stop([x,y])
     def _die(self):
         health = self.cur_hexes[:,:,2]
         dies = np.where(health<0)
@@ -365,8 +373,8 @@ class Fight:
         self.money = 0
         self.item = []
         self.init_view()
+        self.skill = Skill(hexes,self.start_hexes,tic=tic)
         while notend:
-            print(n)
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
@@ -406,18 +414,20 @@ class Fight:
                 cost += [None]
                 is_exist.append(False)
         infos = self.infos()
-        self.gui = GUI(60,70,cost,name,is_exist,infos,self.my_money,self.opp_money)
+        self.gui = GUI(60,70,cost,name,is_exist,infos,self.my_money,self.opp_money,
+            title='{} vs {}'.format(self.myname,self.oppname),place_table=self.place_table)
     def accumulate(self):
         infos = self.infos()
         self.gui.infos = infos
         self.gui.update_champs(self.gui.game,infos)
         self.gui.root.update()
-        time.sleep(0.3)
+        time.sleep(0.1)
     def view(self):
         sefl.gui.root.mainloop()
     def infos(self):
         infos = dict()
         n = 0
+        self._read_hexes(self.cur_hexes)
         for my in self.myarr:
             ind = self.cur_hexes[my[0],my[1],1]
             champ = find_name(int(ind))

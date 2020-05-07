@@ -4,6 +4,8 @@ import numpy as np
 from fight.fight import Fight
 from buff.items import Item
 from env import TFT_env
+from agent.random_agent import *
+from agent.rulebased_agent import *
 class Player:
     def __init__(self,agent,name=None):
         '''
@@ -179,7 +181,7 @@ class Player:
             self.money -= 4
             self.is_prepared = False
         self._update_synergy()
-    def _rearrange(self):
+    def _rearrange(self,action=None):
         # random pick & random arrange
         units,syns = [],[]
         self.fight_num,self.fight_infos = [],[]
@@ -197,7 +199,10 @@ class Player:
             avail_units = len(units)
         else:
             avail_units = self.player_level
-            chosen = np.random.choice(len(units),self.player_level,replace=False)
+            if action==RandomAgent.rearr_action:
+                chosen = np.random.choice(len(units),self.player_level,replace=False)
+            else:
+                chosen = action(avail_units,syns)
             self.fight_units = [units[c] for c in chosen]
             self.fight_synergy = [syns[c] for c in chosen]
             self.fight_infos = [self.fight_infos[c] for c in chosen]
@@ -230,14 +235,14 @@ class Player:
         self._player_levelup()
         self.is_prepared = False
         while self.is_prepared != True:
-            act = self.agent.action(self.money,self.player_level,self.five_champs,
+            act = self.agent.bef_action(self.money,self.player_level,self.five_champs,
                 self.five_cost,self.total_units)
             print(act)
             print(self.act1_spc[act])
             self._before_fight(act)
             if act == 5:
                 self.is_prepared = True
-                self._rearrange()
+                self._rearrange(action=self.agent.rearr_action)
                 self._assign_item()
                 self._update_synergy()
     def result(self,result):

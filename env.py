@@ -50,6 +50,7 @@ class TFT_env(object):
         self.agent6 = agent6
         self.agent7 = agent7
         self.agent8 = agent8
+        self.place_table = [['agent{}'.format(i+1),100] for i in range(8)]
     def init_game(self):
         self.players = [self.agent1,self.agent2,self.agent3,self.agent4,self.agent5,
             self.agent6,self.agent7,self.agent8]
@@ -139,11 +140,16 @@ class TFT_env(object):
             for m in match_order:
                 a1 = self.players[m[0]]
                 a2 = self.players[m[1]]
+                if a1.name == 'agent1':
+                    print(a1.total_units)
+                if a2.name == 'agent1':
+                    print(a2.total_units)
                 fight = Fight(a1,a2,self.cur_round)
                 fight.my_queue = a1.five_champs
                 fight.my_cost = a1.five_cost
                 fight.my_money = a1.money
                 fight.opp_money = a2.money
+                fight.place_table = self.place_table
                 result,life_change = fight.fight()
                 fight.gui.root.destroy()
                 time.sleep(1)
@@ -155,6 +161,7 @@ class TFT_env(object):
                     self._continuous(a2,False)
                     a1.result(result)
                     a2.result(False)
+                    self.place_table[int(a2.name[-1])-1] = [a2.name,a2.life]
                 else:
                     a1.life -= life_change
                     a2.money += 1
@@ -162,6 +169,7 @@ class TFT_env(object):
                     self._continuous(a1,False)
                     a1.result(True)
                     a2.result(result)
+                    self.place_table[int(a1.name[-1])-1] = [a1.name,a1.life]
         self._game_over()
         names = [player.name for player in self.players]
         print('survived players : {}'.format(names))
