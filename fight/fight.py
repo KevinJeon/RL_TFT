@@ -37,6 +37,8 @@ class Fight:
             self.oppinfo,max=False)
         self.mysyns = dict()
         self.oppsyns = dict()
+        self.mywait = my.wait_units
+        self.oppwait = opp.wait_units
     def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,
         oppnum,opparr,oppitems,oppsyn,oppinfo,max=True):
         '''
@@ -169,7 +171,6 @@ class Fight:
                 elif you == -1:
                     self.oppsyns['protector_skillcast'].append([arr[0],arr[1]])
             attack_info = [arrind,'skill',arr,arrind]
-
             return hexes,attack_info
         elif attack_range >= nearest_dist:
             cprob = [1-hexes[arr[0],arr[1],13],hexes[arr[0],arr[1],13]]
@@ -186,9 +187,12 @@ class Fight:
             dprob = [hexes[enemies[ind][0],enemies[ind][1],12],1-hexes[enemies[ind][0],enemies[ind][1],12]]
             dodge = np.random.choice([0,1],p=dprob)
             damage = damage * dodge
-            hexes[enemies[ind][0],enemies[ind][1],2] -= damage/tic*hexes[arr[0],arr[1],6]
-            self._mana(hexes,arr,hit=True)
-            self._mana(hexes,enemies[ind],hit=False)
+            if hexes[enemies[ind][0],enemies[ind][1],25] > 0 :
+                hexes[enemies[ind][0],enemies[ind][1],25] -= damage/tic*hexes[arr[0],arr[1],6]
+                if hexes[enemies[ind][0],enemies[ind][1],25] < 0:
+                    hexes[enemies[ind][0],enemies[ind][1],2] -= -hexes[enemies[ind][0],enemies[ind][1],25]
+            hexes = self._mana(hexes,arr,hit=True)
+            hexes = self._mana(hexes,enemies[ind],hit=False)
             if hexes[enemies[ind][0],enemies[ind][1],2] == 0:
                 hexes[enemies[ind][0],enemies[ind][1],2] = -1.333
             if hexes[enemies[ind][0],enemies[ind][1],2] < 0:
@@ -223,9 +227,9 @@ class Fight:
         '''
         cur_mana = hexes[arr[0],arr[1],3]
         tot_mana = self.start_hexes[arr[0],arr[1],3]
-        is_skill = False
         if tot_mana == 0:
-            return hexes,is_skill
+            hexes[arr[0],arr[1],9] = 1
+            return hexes
         if hit:
             cur_mana += 5
         else:
@@ -234,7 +238,7 @@ class Fight:
             hexes[arr[0],arr[1],9] = 1
             cur_mana = 0
         hexes[arr[0],arr[1],3] = cur_mana
-        return hexes,is_skill
+        return hexes
     def _is_who(self,hexes,arr,synergy):
         if (hexes[arr[0],arr[1],14]==synergy) or (hexes[arr[0],arr[1],15]==synergy)\
             or (hexes[arr[0],arr[1],16]==synergy):
@@ -304,8 +308,11 @@ class Fight:
         on_skill = np.where(self.cur_hexes[:,:,26]==0)
         onx,ony = on_skill
         for x,y in zip(onx,ony):
-            self.arr = [x,y]
-            self.skill.stop([x,y])
+            self.skill.arr = [x,y]
+            print('stop!',self.arr)
+            self.cur_hexes = self.skill.stop([x,y])
+    def _off_stun(self):
+        self.cur_hexes[:,:,18] -= 1
     def _die(self):
         health = self.cur_hexes[:,:,2]
         dies = np.where(health<0)
@@ -373,12 +380,16 @@ class Fight:
         self.money = 0
         self.item = []
         self.init_view()
-        self.skill = Skill(hexes,self.start_hexes,tic=tic)
+        self.skill = Skill(self.cur_hexes,self.start_hexes,tic=n)
+        self.skill.mywait = self.mywait
+        self.skill.oppwait = self.oppwait
         while notend:
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
             self._fight_tic(self.cur_hexes,n,draw=False,view=True)
+            self._off_skill()
+            self._off_stun()
             self._die()
             notend,win,life_change = self._end()
             n += 1

@@ -1,7 +1,8 @@
 import numpy as np
 import copy
 class Skill:
-    def __init__(self,hexes,maxhexes,arr=None,tic):
+    def __init__(self,hexes,maxhexes,arr=None,tic=0):
+        '''마나 0인 챔프들 여기서 때려야함'''
         self.hexes = hexes
         self.maxhexes = maxhexes
         self.arr = arr
@@ -26,17 +27,21 @@ class Skill:
         self.gangplank = False
         #effect
         self.master_yi = False
-        self.kayle = False
+        self.kayle = True
         self.jinx = False
-        self.jinx_bomb = False
+        self.jinx_speed = True
         self.irel_kill = False
         self.ekko = False
         self.fly = 0
-    def _find_target(self,enemies,khazix=False):
+        self.syndra = 0
+    def _find_target(self,enemies,min=True):
         tiles = np.tile(np.array(self.arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
-        ind = np.argmin(dist)
+        if min:
+            ind = np.argmin(dist)
+        if max:
+            ind = np.argmax(dist)
         tx,ty = enemies[ind]
         return tx,ty
     def _boundary(self,x,y,d1,d2):
@@ -71,6 +76,7 @@ class Skill:
     def stop(self,arr):
         ind = self.hexes[self.arr[0],self.arr[1],1]
         level = self.hexes[self.arr[0],self.arr[1],17]
+        self.myopp = self.hexes[self.arr[0],self.arr[1],0]
         self.skills[-1](level,None,stop=True)
         return self.hexes
     def _zoe(self,level,enemies,damage=[200,275,400],stun=[4,5,8],stop=False):
@@ -91,9 +97,12 @@ class Skill:
         self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
         self.hexes[self.arr[0],self.arr[0],2] += shield[level]
     def _malphite(self,level,enemies,shield=[0.4,0.45,0.5],stop=False):
-        if self.tic == 1:
+        '''0mana'''
+        if self.tic == 0:
             self.hexes[self.arr[0],self.arr[1],2] += \
                 self.hexes[self.arr[0],self.arr[1],2]*shield[level]
+        else:
+            return True
     def _leona(self,level,enemies,shield=[40,80,120],stop=False):
         if stop:
             self.hexes[self.arr[0],self.arr[0],7] -= shield[level]
@@ -137,9 +146,17 @@ class Skill:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
             self.hexes[tx,ty,18] = stun[level]
     def _fiora(self,level,enemies,damage=[200,300,450],stun=[3,3,6],stop=False):
-        tx,ty = self._find_target(enemies)
-        self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
-        self.hexes[tx,ty,18] = stun[level]
+        if stop:
+            self.hexes[self.fiora[0],self.fiora[1],2] -= \
+                (damage[level] - self.hexes[self.fiora[0],self.fiora[1],8])/2
+            self.hexes[self.fiora[0],self.fiora[1],18] = stun[level]
+            self.hexes[self.arr[0],self.arr[1],7] -= 10000
+            self.hexes[self.arr[0],self.arr[1],8] -= 10000
+        else:
+            self.hexes[self.arr[0],self.arr[1],26] = 3
+            self.hexes[self.arr[0],self.arr[1],7] += 10000
+            self.hexes[self.arr[0],self.arr[1],8] += 10000
+            self.fiora = self._find_target(enemies)
     def _caitlyn(self,level,enemies,damage=[750,1500,3000],stop=False):
         if stop:
             self.hexes[self.caitlyn[0],self.caitlyn[1],2] -= (damage[level] -\
@@ -153,7 +170,7 @@ class Skill:
             self.hexes[self.arr[0],self.arr[1],26] = 8
     def _yasuo(self,level,enemies,hit=[8,10,12],stop=False):
         tx,ty = self._find_target(enemies)
-        self.hexes[tx,ty,2] -= (hit[level]*self.hexes[self.arr[0],self.arr[1],6]\
+        self.hexes[tx,ty,2] -= (hit[level]*self.hexes[self.arr[0],self.arr[1],6]*\
             self.hexes[self.arr[0],self.arr[1],5] - self.hexes[tx,ty,7])/2
         '''move 구현해야함'''
     def _xin_zhao(self,level,enemies,damage=[200,275,375],stop=False):
@@ -177,31 +194,81 @@ class Skill:
             self.hexes[sel[0],sel[1],18] = 0
             if self.hexes[sel[0],sel[1],2] > self.maxhexes[sel[0],sel[1],2]:
                 self.hexes[sel[0],sel[1],2] = self.maxhexes[sel[0],sel[1],2]
-    def _shen(self,level,enemies,resist=[15,30,45],duration=[5,6,7],stop=False):
-        self.shen = duration
-        xy = np.where(self.hexes[:,:,0]==self.myopp)
-        us = [[x,y] for x,y in zip(xy[0],xy[1])]
-        tiles = np.tile(np.array(self.arr),(len(us),1))
-        dist = np.max(abs(tiles-us),axis=1)
-        '''later~~~~~~~~~~~~~~~~'''
-    def _rakan(self,level,enemies,damage=[175,250,400],duration=[3,3,3],stop=False):
-        '''continuous is later for 3 tic'''
+    def _shen(self,level,enemies,resist=[15,30,45],duration=[5,6,10],stop=False):
+        if stop:
+            self.shen_duration -= 1
+            if self.shen_duration == 0:
+                for buffed in self.shen:
+                    x,y = np.where(self.hexes[:,:,-1]==buffed)
+                    self.hexes[x,y,7] -= 10000
+                    self.hexes[x,y,8] -= resist[level]
+                self.shen = []
+                x1,y1,x2,y2 = self._boundary(self.arr[0],self.arr[1],-1,2)
+                self.hexes[self.arr[0],self.arr[1],26] = 1
+                xy = np.where(self.hexes[x1:x2,y1:y2,0]==self.myopp)
+                targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+                for tx,ty in targets:
+                    self.hexes[tx,ty,7] += 10000
+                    self.hexes[tx,ty,8] += resist[level]
+                    self.shen.append(self.hexes[tx,ty,-1])
+                self.hexes[self.arr[0],self.arr[1],26] = 1
+            else:
+                for buffed in self.shen:
+                    x,y = np.where(self.hexes[:,:,-1]==buffed)
+                    self.hexes[x,y,7] -= 10000
+                    self.hexes[x,y,8] -= resist[level]
+                self.shen = []
+        else:
+            self.shen = []
+            self.shen_duration = duration[level]
+            x1,y1,x2,y2 = self._boundary(self.arr[0],self.arr[1],-1,2)
+            self.hexes[self.arr[0],self.arr[1],26] = 1
+            xy = np.where(self.hexes[x1:x2,y1:y2,0]==self.myopp)
+            targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+            for tx,ty in targets:
+                self.hexes[tx,ty,7] += 10000
+                self.hexes[tx,ty,8] += resist[level]
+                self.shen.append(self.hexes[tx,ty,-1])
+    def _rakan(self,level,enemies,damage=[175,250,400],stun=[3,3,3],stop=False):
+        att_range = self.hexes[self.arr[0],self.arr[1],4]
+        x1,y1,x2,y2 = self._boundary(self.arr[0],self.arr[1],-att_range+1,att_range+1)
+        enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+        xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
+        targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+        tx,ty = self._find_target(targets)
+        x1,y1,x2,y2 = self._boundary(tx,ty,-1,2)
+        xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
+        targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+        for tx,ty in targets:
+            self.hexex[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+            self.hexex[tx,ty,18] = stun[level]
     def _mordekaiser(self,level,enemies,shield=[350,500,800],damage=[50,75,125],stop=False):
-        '''need to make shield '''
-    def _lucian(self,level,enemies,damage=[150,200,325],stop=False):
-        tx,ty = self._find_target(enemies)
-        d = [np.sign(tx-self.arr[0]),np.sign(ty-self.arr[1])]
-        dir = np.random.choice([0,1],2,replace=False)
-        moved = copy.copy(self.arr)
-        shp = np.shape(self.hexes)
-        if (moved[dir[0]] + d[dir[0]] < 0) or (moved[dir[0]] + d[dir[0]] > shp[dir[0]]):
-            if (moved[dir[1]] + d[dir[1]] < 0) or (moved[dir[1]] + d[dir[1]] > shp[dir[1]]):
+        if stop:
+            if self.hexes[self.arr[0],self.arr[1],25] < 0:
                 1 == 1
             else:
-                moved[dir[1]] = moved[dir[1]] + d[dir[1]]
+                enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+                self.hexes[self.arr[0],self.arr[1],26] = 1
+                x1,y1,x2,y2 = self._boundary(self.arr[0],self.arr[1],-1,2)
+                xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
+                targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+                for tx,ty in targets:
+                    self.hexex[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
         else:
-            moved[dir[0]] = moved[dir[0]] + d[dir[0]]
-        '''solve to existed someone when moved'''
+            enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+            self.hexes[self.arr[0],self.arr[1],25] = shield[level]
+            self.hexes[self.arr[0],self.arr[1],26] = 1
+            x1,y1,x2,y2 = self._boundary(self.arr[0],self.arr[1],-1,2)
+            xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
+            targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+            for tx,ty in targets:
+                self.hexex[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+    def _lucian(self,level,enemies,damage=[150,200,325],stop=False):
+        tx,ty = self._find_target(enemies)
+        atk = self.hexes[self.arr[0],self.arr[1],5]*self.hexes[self.arr[0],self.arr[1],6]
+        self.hexes[tx,ty,2] -= (atk-self.hexes[tx,ty,7])/2
+        self.hexes[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+        '''move 구현해야함'''
     def _kaisa(self,level,enemies,hit=[4,6,9],stop=False):
         tiles = np.tile(np.array(self.arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
@@ -209,29 +276,48 @@ class Skill:
         if len(inds) == 0:
             targets = []
         else:
-            print(inds)
-            print(len(inds))
             targets = [enemies[int(i)] for i in inds]
         for t in targets:
             self.hexes[t[0],t[1],2] -= (50*hit[level] - self.hexes[t[0],t[1],8])/2
     def _darius(self,level,enemies,damage=[400,500,750],stop=False):
-        '''later~~~~'''
+        while True:
+            tx,ty = self._find_target(enemies)
+            if 0.5 * self.maxhexes[tx,ty,2] > self.hexes[tx,ty,2]:
+                self.hexes[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+            self.hexes[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+            if self.hexes[tx,ty,2] > 0:
+                break
+        '''move 구현해야함'''
     def _blitzcrank(self,level,enemies,damage=[250,400,900],stop=False):
-        '''continuous is later for 2 tic'''
+        tx,ty = self._find_target(enemies,min=False)
+        self.hexes[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+        self.hexes[tx,ty,18] = 2
+        '''move 구현해야함'''
     def _annie(self,level,enemies,damage=[150,200,300],shield=[270,360,540],stop=False):
-        self.annie = 8
-        '''shield & damage later'''
-        tx,ty = self._find_target(enemies)
-        dx,dy = np.sign(self.arr[0] - tx), np.sign(self.arr[1] - ty)
+        if stop:
+            self.hexes[self.arr[0],self.arr[1],25] = 0
+        else:
+            self.hexes[self.arr[0],self.arr[1],25] = shield[level]
+            self.hexes[self.arr[0],self.arr[1],26] = 8
+        '''damage 나중에 원뿔?'''
     def _ahri(self,level,enemies,damage=[175,250,375],stop=False):
-        '''continuous is later for 4 tic'''
+        '''damage 나중에 각도?'''
     def _vi(self,level,enemies,damage=[400,600,1200],knock=[150,200,500],
-            duration=[4,5,6],stop=False):
-        '''continuous is later for 4 tic'''
+            stun=[4,5,6],stop=False):
+        tx,ty = self._find_target(enemies,min=False)
+        enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+        x1,y1,x2,y2 = self._boundary(tx,ty,-1,2)
+        xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
+        targets = [[x,y] for x,y in zip(xy[0],xy[1])]
+        for tx,ty in targets:
+            self.hexes[tx,ty,2] -= (damage[level]-self.hexes[tx,ty,8])/2
+            self.hexes[tx,ty,18] = stun[level]
+        '''경로에 knock damage 해야함 '''
     def _syndra(self,level,enemies,damage=[80,120,200],stop=False):
+        self.syndra += 3
         target = np.argmax(self.hexes[:,:,2])
         tx,ty = target//8,target%8
-        self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+        self.hexes[tx,ty,2] -= (damage[level]*self.syndra - self.hexes[tx,ty,8])/2
     def _shaco(self,level,enemies,percent=[2,2.25,2.5],stop=False):
         tx,ty = self._find_target(enemies)
         dd = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]
@@ -248,7 +334,7 @@ class Skill:
         self.hexes[self.arr[0],self.arr[1],:] = 0
         self.hexes[tx,ty,2] -= (damage*percent[level]-self.hexes[tx,ty,7])/2
     def _rumble(self,level,enemies,damage=[250,400,800],stop=False):
-        '''continuous is later for 6 tic,10 tic'''
+        '''damage 나중에 원뿔?'''
     def _neeko(self,level,enemies,damage=[200,275,550],stun=[3,5,7],stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         xy = np.where(self.hexes[self.arr[0]-2:self.arr[0]+3,
@@ -260,15 +346,27 @@ class Skill:
     def _master_yi(self,level,enemies,bonus=[75,100,200],heal=[0.08,0.1,0.15],stop=False):
         self.mater_yi = [bonus[level],heal[level]]
     def _lux(self,level,enemies,damage=[200,300,600],stun=[3,4,5],stop=False):
-        '''continuous is later for 4 tic'''
+        '''damage 나중에 원뿔?'''
     def _kassadin(self,level,enemies,damage=[250,400,800],stun=[5,6,7],stop=False):
-        '''range?'''
+        tx,ty = self._find_target(enemies)
+        enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+        '''damage 나중에 원뿔?'''
     def _karma(self,level,enemies,shield=[250,400,800],speed=[0.35,0.5,1],stop=False):
-        '''continuous is later for 4 tic'''
-        xy = np.where(self.hexes[:,:,0]==self.myopp)
-        us = [[x,y] for x,y in zip(xy[0],xy[1])]
-        us,uy = self._find_target(us)
-        '''later'''
+        if stop:
+            x,y = np.where(self.hexes[:,:,-1]==self.karma)
+            self.hexes[x,y,25] -= shield[level]
+            self.hexes[x,y,6] -= speed[level]
+        else:
+            xy = np.where(self.hexes[:,:,0]=self.myopp)
+            us = [[x,y] for x,y in zip(xy[0],xy[1])]
+            tiles = np.tile(np.array(self.arr),(len(enemies),1))
+            dist = np.max(abs(tiles-enemies),axis=1)
+            dist.remove(0)
+            ind = np.argmin(dist)
+            self.hexes[us[ind][0],us[ind][1],25] += shield[level]
+            self.hexes[us[ind][0],us[ind][1],6] += speed[level]
+            self.karma = self.hexes[us[ind][0],us[ind][1],-1]
+            self.hexes[self.arr[0],self.arr[1],26] = 8
     def _jayce(self,level,enemies,damage=[450,600,1200],stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         tx,ty = self._find_target(enemies)
@@ -299,9 +397,9 @@ class Skill:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
             self.hexes[tx,ty,18] = stun[level]
     def _wukong(self,level,enemies,damage=[350,500,4000],stun=[4,4,10],stop=False):
-        '''continuous is later for 6 tic'''
+        '''move 구현해야함'''
     def _velkoz(self,level,enemies,damage=[425,550,2000],stop=False):
-        '''continuous is later for 4 tic'''
+        '''damage 나중에 원뿔?'''
     def _soraka(self,level,enemies,heal=[375,550,20000],stop=False):
         xy = np.where(self.hexes[:,:,0]==self.myopp)
         us = [[x,y] for x,y in zip(xy[0],xy[1])]
@@ -310,29 +408,37 @@ class Skill:
             if self.hexes[u[0],u[1],2] > self.maxhexes[u[0],u[1],2]:
                 self.hexes[u[0],u[1],2] = self.maxhexes[u[0],u[1],2]
     def _kayle(self,level,enemies,damage=[125,200,750],stop=False):
-        '''continuous is later for 4 tic'''
-        self.kayle = damage[level]
+        if self.kayle:
+            self.hexes[self.arr[0],self.arr[1],5] += damage[level]
+            self.kayle = False
     def _jinx(self,level,enemies,speed=[0.6,0.75,1],damage=[100,175,750],stop=False):
-        if self.jinx > 2:
-            self.jinx_bomb = [True,damage[level]]
-        elif self.jinx > 1:
+        '''0mana'''
+        if self.jinx >= 2:
+            enemy = self.hexes[enemies[0][0],enemies[0][1],0]
+            tx,ty = self._find_target(enemies)
+            atk = self.hexes[self.arr[0],self.arr[1],5]*self.hexes[self.arr[0],self.arr[1],6]
+            self.hexes[tx,ty,2] -= (atk - self.hexes[tx,ty,7])/2
+            x1,y1,x2,y2 = self._boundary(tx,ty,-1,2)
+            xy = np.where(self,hexes[x1:x2,y1:y2,0]==enemy)
+            target = [[x,y] for x,y in zip(xy[0],xy[1])]
+            for tx,ty in targets:
+                self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+        elif (self.jinx >= 1) and (self.jinx_speed):
             self.hexes[self.arr[0],self.arr[1],6] += speed[level]
+            self.jinx_speed = False
     def _jhin(self,level,enemies,percent=[2.44,3.44,44.44],stop=False):
+        '''0mana'''
         if self.tic % 4 == 0:
             tx,ty = self._find_target(enemies)
             self.hexes[tx,ty,2] -= (self.hexes[self.arr[0],self.arr[1],5]*\
                 percent[level]-self.hexes[tx,ty,7])/2
     def _irelia(self,level,enemies,percent=[1.75,2.5,5],stop=False):
-        '''target is random'''
-        enemy = self.hexes[enemies[0][0],enemies[0][1],0]
-        tx,ty = np.random.choice(enemies,1)[0]
-        stop=False
-        self.hexes[tx,ty,2] -= (self.hexes[arr[0],arr[1],5]*percent[level] \
-            - self.hexes[tx,ty,7])/2
-        if self.hexes[tx,ty,2] <= 0:
-            self.irel_kill = True
-        else:
-            self.irel_kill = False
+        while True:
+            tx,ty = self._find_target(enemies)]
+            self.hexes[tx,ty,2] -= (self.hexes[arr[0],arr[1],5]*percent[level] \
+                - self.hexes[tx,ty,7])/2
+            if self.hexes[tx,ty,2] > 0:
+                break
     def _fizz(self,level,enemies,damage=[350,500,2000],stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         ind = np.random.choice(len(enemies),1)[0]
@@ -354,25 +460,45 @@ class Skill:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
             self.hexes[tx,ty,18] = stun[level]
     def _thresh(self,level,enemies,mana=[25,50,200],units=[1,1,9],stop=False):
-        '''later '''
+        if self.myopp == 1:
+            wait_units = self.mywait
+        else:
+            wait_units = self.oppwait
+        units = np.random.choice(len(range(wait_units)),units[level])
+        '''wait_unit 빈 곳 배치 해야함'''
     def _miss_fortune(self,level,enemies,damage=[0.6,0.8,9.99],stop=False):
-        '''continuous is later for 5 tic'''
+        '''damage 나중에 원뿔?'''
     def _lulu(self,level,enemies,num=[2,4,12],bonus=[0.05,0.1,0.25],stun=[6,6,16],
         stop=False):
-        '''later'''
+        if stop:
+            for tx,ty in self.lulu:
+                self.hexes[tx,ty,7] += bonus[level]*self.hexes[tx,ty,7]
+                self.hexes[tx,ty,8] += bonus[level]*self.hexes[tx,ty,8]
+        else:
+            tiles = np.tile(np.array(self.arr),(len(enemies),1))
+            dist = np.max(abs(tiles-enemies),axis=1)
+            enemies = [[e[0],e[1],d] for e,d in zip(enemies,dist)]
+            enemies = sorted(enemies,lambda enemy: enemy[2])
+            if num[level] > len(enemies):
+                nums = len(enemies)
+            else:
+                nums = num[level]
+            targets = enemies[:nums]
+            self.hexes[self.arr[0],self.arr[1],26] = stun[level]
+            for tx,ty in targets:
+                self.hexes[tx,ty,7] -= bonus[level]*self.hexes[tx,ty,7]
+                self.hexes[tx,ty,8] -= bonus[level]*self.hexes[tx,ty,8]
+            self.lulu = targets
     def _gangplank(self,level,enemies,damage=[450,600,9001],stop=False):
-        if self.gangplank == 0:
-            xy = np.where(self.hexes[self.grange[0]-3:self.grange[0]+4,\
-                self.grange[1]-3:self.grange[1]+4,0]==enemy)
+        if stop:
+            x1,y1,x2,y2 = self.gangpalnk
+            xy = np.where(self.hexes[x1:x2,y1:y2,0]]==enemy)
             targets = [[x,y] for x,y in zip(xy[0],xy[1])]
             for tx,ty in targets:
                 self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
-            self.gangpalnk = False
-        elif self.gangplank:
+        else:
             tx,ty = self._find_target(enemies)
-            self.grange = [tx,ty]
-            if type(self.gangplank) == int:
-                self.gangplank -= 1
+            self.gangplank = [self._boundary(tx,ty,-3,4)]
     def _ekko(self,level,enemies,damage=[225,400,2000],stop=False):
         self.ekko = True
         for x,y in enemies:

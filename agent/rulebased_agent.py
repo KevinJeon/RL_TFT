@@ -26,6 +26,7 @@ class RulebasedAgent:
         else:
             for i in range(5):
                 if five_champs[i] in favorite_syn:
+                    print(five_champs)
                     ind = a.index(i)
                     return i
             return np.random.choice([7,8],1,p=[0.7,0.3])[0]

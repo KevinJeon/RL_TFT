@@ -172,9 +172,11 @@ class GUI:
     def update_champs(self,game,infos):
         hexes = [i[1] for i in self.arr]
         who = [i[0] for i in self.arr]
+        check = [i[4] for i in self.arr]
         for k,info in infos.items():
             k = str(list(k))
             ind = who.index(info[2])
+            del check[ind]
             if hexes[ind] != k:
                 xy = self.center[k]
                 kk =eval(k)
@@ -186,7 +188,8 @@ class GUI:
                 game.move(self.arr[ind][4],dx,dy)
                 game.move(self.arr[ind][5],dx,dy)
                 self.arr[ind][1] = k
-
+        for c in check:
+            game.delete(c)
     def _ready_champs(self,game):
         game.ch1 = None
         game.ch2 = None
