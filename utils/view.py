@@ -1,6 +1,8 @@
 import tkinter as tk
 from PIL import ImageTk as itk
 from PIL import Image
+import tkinter.font as TkFont
+
 class GUI:
     #pallete
     black = '#000000'
@@ -18,6 +20,8 @@ class GUI:
     gold = '#e0d44f'
     nogold = '#3b3b3b'
     battlefield = '#69bf47'
+    health = '#37d456'
+    mana = '#1424db'
     def __init__(self,x,y,cost=None,name=None,is_exist=None,infos=None,
         my_money=0,opp_money=0,title=None,place_table=None):
         # canvas
@@ -154,6 +158,7 @@ class GUI:
             game.create_text(w*i+15,self.h-3*h/4-10,text=str(cost[i]),fill='white')
             game.create_image(w*(i+1)-i_w/2,self.h-h+i_h/2,image=imgs[i])
     def init_make_champs(self,game,infos):
+        helv36 = TkFont.Font(family='Helvetica',size=10, weight='bold')
         for n,(k,info) in enumerate(infos.items()):
             k = str(list(k))
             xy = self.center[k]
@@ -166,17 +171,33 @@ class GUI:
             img = tk.PhotoImage(file='./utils/icon/{}.gif'.format(name))
             border = game.create_rectangle(xy[1]-25,xy[0]-25,xy[1]+25,xy[0]+25,
                 outline=clr,width=2)
+
             self.photos[n] = img
             image_info = game.create_image(xy[1],xy[0],image=self.photos[n])
-            self.arr.append([info[2],k,info[0],self.photos[n],image_info,border])
+            mana = game.create_text(xy[1]+12,xy[0]+20,text=info[4],fill=GUI.mana,
+                font=helv36)
+            health = game.create_text(xy[1]+12,xy[0]+10,text=info[3],fill=GUI.health,
+                font=helv36)
+            self.arr.append([info[2],k,info[0],self.photos[n],image_info,
+                border,health,mana])
     def update_champs(self,game,infos):
         hexes = [i[1] for i in self.arr]
         who = [i[0] for i in self.arr]
-        check = [i[4] for i in self.arr]
+        check1 = [i[4] for i in self.arr]
+        check2 = [i[5] for i in self.arr]
+        check3 = [i[6] for i in self.arr]
+        check4 = [i[7] for i in self.arr]
         for k,info in infos.items():
             k = str(list(k))
             ind = who.index(info[2])
-            del check[ind]
+            check1.remove(self.arr[ind][4])
+            check2.remove(self.arr[ind][5])
+            check3.remove(self.arr[ind][6])
+            check4.remove(self.arr[ind][7])
+            health = self.arr[ind][6]
+            mana = self.arr[ind][7]
+            game.itemconfig(health,text=info[3])
+            game.itemconfig(mana,text=info[4])
             if hexes[ind] != k:
                 xy = self.center[k]
                 kk =eval(k)
@@ -187,9 +208,16 @@ class GUI:
                 #dx,dy = kk[0]-hex[0],kk[1]-hex[1]
                 game.move(self.arr[ind][4],dx,dy)
                 game.move(self.arr[ind][5],dx,dy)
+                game.move(health,dx,dy)
+                game.move(mana,dx,dy)
                 self.arr[ind][1] = k
-        for c in check:
-            game.delete(c)
+                self.arr[ind][6] = health
+                self.arr[ind][7] = mana
+        for c1,c2,c3,c4 in zip(check1,check2,check3,check4):
+            game.delete(c1)
+            game.delete(c2)
+            game.delete(c3)
+            game.delete(c4)
     def _ready_champs(self,game):
         game.ch1 = None
         game.ch2 = None
