@@ -5,6 +5,7 @@ from agent.random_agent import RandomAgent
 from agent.rulebased_agent import RulebasedAgent
 from one_player import Player
 from utils.draw import make_video
+import json
 import os
 def main():
     keys = dict()
@@ -38,9 +39,15 @@ def main():
         'Winner champ is {}\n'+\
         'Winner synergy is {}\n').format(env.players[0].name,
             env.players[0].total_units.keys(),env.players[0].player_synergy)
-    print(msg)
+    return env.place_table
 if __name__ == '__main__':
-    main()
+    total_place = dict()
+    for i in range(2):
+        place_table = main()
+        sorted_place = sorted(place_table.items(),key=(lambda x:x[1]))
+        total_place[str(i)] = sorted_place
+    json.dump('results.json',total_place)
+
     #folders = os.listdir('./fig')
     #i = np.random.choice(len(folders),1)[0]
     #make_video('./fig/{}'.format(folders[i]),'./fig/ex.avi')

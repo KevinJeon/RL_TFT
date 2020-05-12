@@ -123,8 +123,6 @@ class Player:
                 del self.total_units[champ]
         else:
             num = self.champ_state_info[champ[:-2]]['num']
-            print(num)
-            print(champ[:-2])
             synergy = self.champ_state_info[champ[:-2]]['elem']
             infos = self.champ_level_info[champ[:-2]].items()
             info = dict()
@@ -209,8 +207,6 @@ class Player:
             self.fight_synergy = [syns[c] for c in chosen]
             self.fight_infos = [self.fight_infos[c] for c in chosen]
             self.fight_num = [self.fight_num[c] for c in chosen]
-            print(self.fight_num)
-            print(self.fight_infos)
         for unit in self.fight_units:
             items = self.total_units[unit[:-2]]['item']
             owners = self.total_units[unit[:-2]]['owner']

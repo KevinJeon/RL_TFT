@@ -95,8 +95,8 @@ class TFT_env(object):
         orders = np.arange(8)
         np.random.shuffle(orders)
         item = list(np.random.choice(self.items,8,replace=False))
-        for order,player in zip(orders,self.players):
-            player.champ_append(self.sushi[order]+'_1',item)
+        for i,(order,player) in enumerate(zip(orders,self.players)):
+            player.champ_append(self.sushi[order]+'_1',[item[i]])
             print('sushi finished {} champ is {}'.format(player.name,self.sushi[order]))
     def _prepare(self):
         for player in self.players:

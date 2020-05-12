@@ -157,6 +157,7 @@ class Fight:
     def _one_champ_tic(self,hexes,attack_range,arr,you,opp,enemies,tic,
         void=False,sniper=False,pirate=False,starguard=False,protector=False,
         valkyrie=False,infiltrator=False):
+        print(len(enemies),arr)
         tiles = np.tile(np.array(arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
@@ -191,6 +192,8 @@ class Fight:
             return hexes,attack_info
         elif attack_range >= nearest_dist:
             cprob = [1-hexes[arr[0],arr[1],13],hexes[arr[0],arr[1],13]]
+            if hexes[arr[0],arr[1],13] > 1:
+                cprob=[0,1]
             critical = np.random.choice([0,1],p=cprob)
             damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
             damage += critical*(hexes[arr[0],arr[1],11]*(hexes[arr[0],arr[1],5]))
@@ -202,6 +205,8 @@ class Fight:
             if damage < 0:
                 damage = 0
             dprob = [hexes[enemies[ind][0],enemies[ind][1],12],1-hexes[enemies[ind][0],enemies[ind][1],12]]
+            if hexes[enemies[ind][0],enemies[ind][1],12] > 1:
+                dprob = [0,1]
             dodge = np.random.choice([0,1],p=dprob)
             damage = damage * dodge
             #print('{} attack! damage : {}, {}'.format(\
@@ -257,7 +262,7 @@ class Fight:
             hexes[arr[0],arr[1],9] = 1
             return hexes
         if hit:
-            cur_mana += 5
+            cur_mana += 5 * hexes[arr[0],arr[1],6]
         else:
             cur_mana += 2
         if cur_mana >= tot_mana:
@@ -345,7 +350,7 @@ class Fight:
         #print(self.cur_hexes[:,:,-1])
         for x,y in zip(onx,ony):
             self.skill.arr = [x,y]
-            print('stop!',self.skill.arr)
+            #print('stop!',self.skill.arr)
             self.cur_hexes = self.skill.stop()
     def _off_stun(self):
         self.cur_hexes[:,:,18] -= 1
@@ -470,7 +475,7 @@ class Fight:
         self.gui.infos = infos
         self.gui.update_champs(self.gui.game,infos)
         self.gui.root.update()
-        time.sleep(0.1)
+        time.sleep(0.05)
     def view(self):
         sefl.gui.root.mainloop()
     def infos(self):
@@ -480,13 +485,15 @@ class Fight:
         for my in self.myarr:
             ind = self.cur_hexes[my[0],my[1],1]
             heal = int(self.cur_hexes[my[0],my[1],2])
+            mana = int(self.cur_hexes[my[0],my[1],3])
             champ = find_name(int(ind))
-            infos[my] = [champ,1,self.cur_hexes[my[0],my[1],-1],heal,self.cur_hexes[my[0],my[1],3]]
+            infos[my] = [champ,1,self.cur_hexes[my[0],my[1],-1],heal,mana]
             n+=1
         for opp in self.opparr:
             ind = self.cur_hexes[opp[0],opp[1],1]
             heal = int(self.cur_hexes[opp[0],opp[1],2])
+            mana = int(self.cur_hexes[opp[0],opp[1],3])
             champ = find_name(int(ind))
-            infos[opp] = [champ,-1,self.cur_hexes[opp[0],opp[1],-1],heal,self.cur_hexes[my[0],my[1],3]]
+            infos[opp] = [champ,-1,self.cur_hexes[opp[0],opp[1],-1],heal,mana]
             n+=1
         return infos

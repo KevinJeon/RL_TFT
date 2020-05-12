@@ -122,8 +122,8 @@ class Synergy:
             for champ in champs:
                 copies = np.tile(champ,(len(champs),1))
                 diff = abs(copies-champs)
-                adj = len(diff[diff<=2])
-                self.hexes[champ[0],champ[1],2] += effect[0]*adj
+                adj = len(diff[diff<=1])
+                self.hexes[champ[0],champ[1],25] += effect[0]*adj
                 self.hexes[champ[0],champ[1],5] += effect[1]*adj
     def _space_pirate(self,champs,effect):
         #print('_space_pirate')
@@ -147,7 +147,7 @@ class Synergy:
             if self.hexes[enemy[0],enemy[1],2] < self.start_hexes[enemy[0],enemy[1],2]/2:
                 self.hexes[champ[0],champ[1],13] = 1
             else:
-                self.hexes[champ[0],champ[1],13] = self.start_hexes[enemy[0],enemy[1],13]
+                self.hexes[champ[0],champ[1],13] = self.start_hexes[champ[0],champ[1],13]
     def _void(self,champs,effect):
         '''
         apply at fight.py

@@ -59,7 +59,6 @@ class Skill:
             y2 = 7
         return int(x1),int(x2),int(y1),int(y2)
     def cast(self,enemy):
-        print('cast!, {}'.format(self.arr))
         ind = self.hexes[self.arr[0],self.arr[1],1]
         level = self.hexes[self.arr[0],self.arr[1],17]
         xy = np.where(self.hexes[:,:,0]==enemy)
@@ -108,7 +107,7 @@ class Skill:
             1 == 1
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
-        self.hexes[self.arr[0],self.arr[1],2] += shield[level]/2
+        self.hexes[self.arr[0],self.arr[1],25] += shield[level]/2
     def _malphite(self,level,enemies,shield=[0.4,0.45,0.5],stop=False):
         '''0mana'''
         if self.tic == 0:
@@ -141,23 +140,16 @@ class Skill:
 
             for buffed in self.jarvan:
                 x,y = np.where(self.hexes[:,:,-1]==int(buffed))
-                if x == []:
+                if len(x) == 0:
                     continue
                 self.hexes[int(x[0]),int(y[0]),6] -= speed[level]
         else:
             self.jarvan = []
             us = self.hexes[self.arr[0],self.arr[1],0]
             x1,y1,x2,y2 = self._boundary(self.arr[0],self.arr[1],-1,2)
-            print(us)
             xy = np.where(self.hexes[x1:x2,y1:y2,0]==us)
-            print(xy)
             targets = [[x,y] for x,y in zip(xy[0],xy[1])]
-            print(targets)
             for tx,ty in targets:
-                print(self.hexes[:,:,2])
-                print(self.hexes[x1+tx,y1+ty,0])
-                print(self.hexes[x1+tx,y1+ty,-1])
-                print(self.hexes[x1+tx,y1+ty,2])
                 self.hexes[x1+tx,y1+ty,6] += speed[level]
                 self.jarvan.append(self.hexes[x1+tx,y1+ty,-1])
             self.hexes[self.arr[0],self.arr[1],26] = 8
@@ -286,7 +278,7 @@ class Skill:
                     1 == 1
                 else:
                     self.hexes[tx+x1,ty+y1,2] -= (damage[level] - self.hexes[tx+x1,ty+y1,8])/2
-                self.hexex[tx+x1,ty+y1,18] = stun[level]
+                self.hexes[tx+x1,ty+y1,18] = stun[level]
     def _mordekaiser(self,level,enemies,shield=[350,500,800],damage=[50,75,125],stop=False):
         if stop:
             if self.hexes[self.arr[0],self.arr[1],25] < 0:
@@ -397,21 +389,19 @@ class Skill:
     def _shaco(self,level,enemies,percent=[2,2.25,2.5],stop=False):
         tx,ty = self._find_target(enemies)
         dd = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]
-        avail = []
         for d in dd:
             dx,dy = tx+d[0],ty+d[1]
             if (dx<0) or (dx>6) or (dy<0) or (dy>7):
-                continue
-            avail.append(d)
-        i = np.random.choice(len(avail),1)[0]
+                dd.remove(d)
+        i = np.random.choice(len(dd),1)[0]
         x,y = dd[i][0],dd[i][1]
         damage = self.hexes[self.arr[0],self.arr[1],5]*self.hexes[self.arr[0],self.arr[1],6]
-        self.hexes[tx+x,ty+y,:] = self.hexes[self.arr[0],self.arr[1],:]
         self.hexes[self.arr[0],self.arr[1],:] = 0
         if (damage*percent[level]-self.hexes[tx,ty,7])/2 < 0 :
             1 == 1
         else:
             self.hexes[tx,ty,2] -= (damage*percent[level]-self.hexes[tx,ty,7])/2
+        '''move 나중에'''
     def _rumble(self,level,enemies,damage=[250,400,800],stop=False):
         '''damage 나중에 원뿔?'''
     def _neeko(self,level,enemies,damage=[200,275,550],stun=[3,5,7],stop=False):
@@ -443,7 +433,8 @@ class Skill:
             us = [[x,y] for x,y in zip(xy[0],xy[1])]
             tiles = np.tile(np.array(self.arr),(len(us),1))
             dist = list(np.max(abs(tiles-us),axis=1))
-            dist.remove(0)
+            if len(dist) != 1:
+                dist.remove(0)
             ind = np.argmin(dist)
             self.hexes[us[ind][0],us[ind][1],25] += shield[level]/2
             self.hexes[us[ind][0],us[ind][1],6] += speed[level]
@@ -468,7 +459,7 @@ class Skill:
         x1,y1,x2,y2 = self._boundary(tx,ty,-2,3)
         xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
         targets = [[x,y] for x,y in zip(xy[0],xy[1])]
-        for t in targets:
+        for tx,ty in targets:
             if (damage[level] - self.hexes[tx+x1,ty+y1,8])/2 < 0 :
                 1 == 1
             else:
@@ -534,13 +525,14 @@ class Skill:
     def _irelia(self,level,enemies,percent=[1.75,2.5,5],stop=False):
         while True:
             tx,ty = self._find_target(enemies)
-            if (self.hexes[arr[0],arr[1],5]*percent[level]-self.hexes[tx,ty,7])/2 < 0:
+            if (self.hexes[self.arr[0],self.arr[1],5]*percent[level]-self.hexes[tx,ty,7])/2 < 0:
                 1 == 1
             else:
-                self.hexes[tx,ty,2] -= (self.hexes[arr[0],arr[1],5]*percent[level] \
+                self.hexes[tx,ty,2] -= (self.hexes[self.arr[0],self.arr[1],5]*percent[level] \
                     - self.hexes[tx,ty,7])/2
             if self.hexes[tx,ty,2] > 0:
                 break
+            enemies.remove([tx,ty])
     def _fizz(self,level,enemies,damage=[350,500,2000],stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         ind = np.random.choice(len(enemies),1)[0]
@@ -548,7 +540,7 @@ class Skill:
         x1,y1,x2,y2 = self._boundary(tx,ty,-3,4)
         xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
         targets = [[x,y] for x,y in zip(xy[0],xy[1])]
-        for t in targets:
+        for tx,ty in targets:
             if (damage[level] - self.hexes[tx+x1,ty+y1,8])/2 < 0 :
                 1 == 1
             else:

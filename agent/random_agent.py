@@ -8,10 +8,22 @@ class RandomAgent:
         if (money < 4) or (player_level == 9):
             ind = a.index(8)
             del a[ind]
-        for i in range(5):
-            if (five_champs[i] == False) or (money < five_cost[i]):
-                ind = a.index(i)
-                del a[ind]
+        if len(total_units) >= player_level + 9:
+            ind = a.index(0)
+            del a[ind]
+            ind = a.index(1)
+            del a[ind]
+            ind = a.index(2)
+            del a[ind]
+            ind = a.index(3)
+            del a[ind]
+            ind = a.index(4)
+            del a[ind]
+        else:
+            for i in range(5):
+                if (five_champs[i] == False) or (money < five_cost[i]):
+                    ind = a.index(i)
+                    del a[ind]
         if total_units:
             ind = a.index(6)
             del a[ind]
