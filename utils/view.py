@@ -153,9 +153,9 @@ class GUI:
             if  data[i]==False:
                 continue
             game.create_rectangle(w*i,self.h,w*(i+1),self.h-h,fill=clrs[cost[i]-1])
-            game.create_text(w*i+w/3,self.h-h/4,text=name[i],fill='white')
+            game.create_text(w*i+w/3,self.h-h/4,text=name[i],fill='black')
             game.create_oval(w*i,self.h-3*h/4,w*i+10,self.h-3*h/4-10,fill=GUI.gold)
-            game.create_text(w*i+15,self.h-3*h/4-10,text=str(cost[i]),fill='white')
+            game.create_text(w*i+15,self.h-3*h/4-10,text=str(cost[i]),fill='black')
             game.create_image(w*(i+1)-i_w/2,self.h-h+i_h/2,image=imgs[i])
     def init_make_champs(self,game,infos):
         helv36 = TkFont.Font(family='Helvetica',size=10, weight='bold')

@@ -140,14 +140,10 @@ class Synergy:
         for champ in champs:
             self.hexes[champ[0],champ[1],3] += self.star_skilled * effect
     def _valkyrie(self,champs,effect):
-        '''need to order same with champs'''
+        '''
+        apply at fight.py
+        '''
         #print('_valkyrie')
-        for i,champ in enumerate(champs):
-            enemy = self.valkyrie_target[i]
-            if self.hexes[enemy[0],enemy[1],2] < self.start_hexes[enemy[0],enemy[1],2]/2:
-                self.hexes[champ[0],champ[1],13] = 1
-            else:
-                self.hexes[champ[0],champ[1],13] = self.start_hexes[champ[0],champ[1],13]
     def _void(self,champs,effect):
         '''
         apply at fight.py

@@ -533,6 +533,8 @@ class Skill:
             if self.hexes[tx,ty,2] > 0:
                 break
             enemies.remove([tx,ty])
+            if len(enemies) == 0:
+                break
     def _fizz(self,level,enemies,damage=[350,500,2000],stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         ind = np.random.choice(len(enemies),1)[0]
@@ -564,28 +566,28 @@ class Skill:
             wait_units = self.mywait
         else:
             wait_units = self.oppwait
-        units = np.random.choice(len(range(wait_units)),units[level])
+        #units = np.random.choice(len(wait_units),units[level])
         '''wait_unit 빈 곳 배치 해야함'''
     def _miss_fortune(self,level,enemies,damage=[0.6,0.8,9.99],stop=False):
         '''damage 나중에 원뿔?'''
     def _lulu(self,level,enemies,num=[2,4,12],bonus=[0.05,0.1,0.25],stun=[6,6,16],
         stop=False):
         if stop:
-            for tx,ty in self.lulu:
+            for tx,ty,_ in self.lulu:
                 self.hexes[tx,ty,7] += bonus[level]*self.hexes[tx,ty,7]
                 self.hexes[tx,ty,8] += bonus[level]*self.hexes[tx,ty,8]
         else:
             tiles = np.tile(np.array(self.arr),(len(enemies),1))
             dist = np.max(abs(tiles-enemies),axis=1)
             enemies = [[e[0],e[1],d] for e,d in zip(enemies,dist)]
-            enemies = sorted(enemies,lambda enemy: enemy[2])
+            enemies = sorted(enemies,key = lambda enemy: enemy[2])
             if num[level] > len(enemies):
                 nums = len(enemies)
             else:
                 nums = num[level]
             targets = enemies[:nums]
             self.hexes[self.arr[0],self.arr[1],26] = stun[level] + 1
-            for tx,ty in targets:
+            for tx,ty,_ in targets:
                 self.hexes[tx,ty,7] -= bonus[level]*self.hexes[tx,ty,7]
                 self.hexes[tx,ty,8] -= bonus[level]*self.hexes[tx,ty,8]
             self.lulu = targets
@@ -614,8 +616,9 @@ class Skill:
             self.hexes[x,y,2] -= (ad+ap)/2
     def _aurelion_sol(self,level,enemies,damage=[100,150,750],stop=False):
         self.fly += 3
-        xy = np.random.choice(enemies,self.fly)
-        for x,y in xy:
+        inds = np.random.choice(len(enemies),self.fly)
+        for ind in inds:
+            x,y = enemies[ind]
             if (damage[level] - self.hexes[x,y,8])/2 < 0 :
                 1 == 1
             else:

@@ -41,10 +41,10 @@ class Player:
         self.five_champs,self.five_cost = [],[]
         stars = np.bincount(np.random.choice(5,size=5,
             p=self.champ_distribution['l'+str(self.player_level)]))
-        for remove,star,n_champs in zip(self.removal.items(),stars,self.champ_cost_info.items()):
+        for rem,star,n_champs in zip(self.removal.items(),stars,self.champ_cost_info.items()):
             n_champs = n_champs[1]
-            for r in remove[1]:
-                n_champs = n_champs.remove(r)
+            for r in rem[1]:
+                n_champs.remove(r)
             champs = np.random.choice(len(n_champs),size=star)
             self.five_champs += [n_champs[c] for c in champs]
         self.five_cost += [self._cost(c+'_1') for c in self.five_champs]
@@ -142,9 +142,9 @@ class Player:
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
                         if c[0] in self.removal.keys():
-                            self.removal[c[0]].append(c[1].index(champ[:-2]))
+                            self.removal[c[0]].append(champ[:-2])
                         else:
-                            self.removal[c[1]] = [c[1].index(champ[:-2])]
+                            self.removal[c[1]] = [champ[:-2]]
     def _player_levelup(self):
         if self.player_level == 9:
             pass

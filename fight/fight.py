@@ -157,7 +157,6 @@ class Fight:
     def _one_champ_tic(self,hexes,attack_range,arr,you,opp,enemies,tic,
         void=False,sniper=False,pirate=False,starguard=False,protector=False,
         valkyrie=False,infiltrator=False):
-        print(len(enemies),arr)
         tiles = np.tile(np.array(arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
@@ -195,6 +194,10 @@ class Fight:
             if hexes[arr[0],arr[1],13] > 1:
                 cprob=[0,1]
             critical = np.random.choice([0,1],p=cprob)
+            if valkyrie:
+                if hexes[enemies[ind][0],enemies[ind][1],2] <= \
+                    self.start_hexes[enemies[ind][0],enemies[ind][1],2] * 0.5:
+                    critical = 1
             damage = hexes[arr[0],arr[1],5] - hexes[enemies[ind][0],enemies[ind][1],7]
             damage += critical*(hexes[arr[0],arr[1],11]*(hexes[arr[0],arr[1],5]))
             if void:
@@ -308,6 +311,7 @@ class Fight:
         self.oppsyns['protector_skillcast'] = []
         self.skill.tic = n
         tofill = abs(len(self.opparr)-len(self.myarr))
+        print('before start',len(self.opparr),len(self.myarr))
         if len(self.opparr) > len(self.myarr):
             self.myarr += [None] * tofill
         else:
@@ -319,22 +323,30 @@ class Fight:
                 mark = hexes[:,:,0]
                 oxs,oys = np.where(mark==1)
                 oa_enemies = np.array([[x,y] for x,y in zip(oxs,oys)])
-                osni,opir,ovoi,osta,opro,oval,oinf = self._syn_tic(hexes,self.oppsyn_infos,oa)
-                hexes,attack_info = self._one_champ_tic(hexes,oar,oa,-1,1,oa_enemies,
-                    tic,sniper=osni,pirate=opir,void=ovoi,starguard=osta,protector=opro,
-                    valkyrie=oval,infiltrator=oinf)
-                attack_infos.append(attack_info)
+                if len(oa_enemies) == 0:
+                    pass
+                else:
+                    osni,opir,ovoi,osta,opro,oval,oinf = self._syn_tic(hexes,self.oppsyn_infos,oa)
+                    hexes,attack_info = self._one_champ_tic(hexes,oar,oa,-1,1,oa_enemies,
+                        tic,sniper=osni,pirate=opir,void=ovoi,starguard=osta,protector=opro,
+                        valkyrie=oval,infiltrator=oinf)
+                    attack_infos.append(attack_info)
+            print('after oa',len(self.opparr),len(self.myarr))
             if not (ma == None):
                 ma = list(ma)
                 mar = hexes[ma[0],ma[1],4]
                 mark = hexes[:,:,0]
                 mxs,mys=np.where(mark==-1)
                 ma_enemies = np.array([[x,y] for x,y in zip(mxs,mys)])
-                msni,mpir,mvoi,msta,mpro,mval,minf = self._syn_tic(hexes,self.mysyn_infos,ma)
-                hexes,attack_info = self._one_champ_tic(hexes,mar,ma,1,-1,ma_enemies,
-                    tic,sniper=msni,pirate=mpir,void=mvoi,starguard=msta,protector=mpro,
-                    valkyrie=mval,infiltrator=minf)
-                attack_infos.append(attack_info)
+                if len(ma_enemies) == 0:
+                    pass
+                else:
+                    msni,mpir,mvoi,msta,mpro,mval,minf = self._syn_tic(hexes,self.mysyn_infos,ma)
+                    hexes,attack_info = self._one_champ_tic(hexes,mar,ma,1,-1,ma_enemies,
+                        tic,sniper=msni,pirate=mpir,void=mvoi,starguard=msta,protector=mpro,
+                        valkyrie=mval,infiltrator=minf)
+                    attack_infos.append(attack_info)
+            print('after ma',len(self.opparr),len(self.myarr))
         self._read_hexes(hexes)
         if draw:
             self.visualize(hexes,n,attack_infos)
@@ -475,7 +487,7 @@ class Fight:
         self.gui.infos = infos
         self.gui.update_champs(self.gui.game,infos)
         self.gui.root.update()
-        time.sleep(0.05)
+        time.sleep(0.01)
     def view(self):
         sefl.gui.root.mainloop()
     def infos(self):

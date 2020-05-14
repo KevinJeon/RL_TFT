@@ -41,12 +41,19 @@ def main():
             env.players[0].total_units.keys(),env.players[0].player_synergy)
     return env.place_table
 if __name__ == '__main__':
-    total_place = dict()
-    for i in range(2):
+    with open('result.json','r') as f:
+        jd = json.load(f)
+        jdk = [int(k) for k in jd.keys()]
+        jdk = sorted(jdk,reverse=True)
+    n = jdk[0]
+    print(jdk)
+    for i in range(100):
         place_table = main()
-        sorted_place = sorted(place_table.items(),key=(lambda x:x[1]))
-        total_place[str(i)] = sorted_place
-    json.dump('results.json',total_place)
+        sorted_place = sorted(place_table,key=(lambda x:x[1]))
+        jd[str(i+n+1)] = sorted_place
+        if i % 10 == 0:
+            with open('result.json', 'w', encoding='utf-8') as f:
+                json.dump(jd, f, indent="\t")
 
     #folders = os.listdir('./fig')
     #i = np.random.choice(len(folders),1)[0]
