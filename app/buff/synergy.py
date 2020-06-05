@@ -36,7 +36,7 @@ class Synergy:
         self.protector_skillcast = protector_skillcast
         self.is_pirate,self.is_sniper,self.is_void = False,False,False
         self.is_starguard,self.is_protector,self.is_valkyrie = False,False,False
-        self.is_infil = False
+        self.is_infil,self.is_demol,self.is_mana = False,False,False
         self.functions = [self._celestial,self._chrono,self._cybernatic,self._dark_star,
             self._mech_pilot,self._rebel,self._space_pirate,self._star_guardian,
             self._valkyrie,self._void,self._blademaster,self._blaster,self._brawler,
@@ -61,6 +61,8 @@ class Synergy:
         elif self.tic % 4 == 3:
             #print('_chrono')
             for arr in self.arrs:
+                if arr == None:
+                    continue
                 self.hexes[arr[0],arr[1],6] += effect
 
     def _cybernatic(self,champs,effect):
@@ -86,36 +88,39 @@ class Synergy:
                 xlist = list(range(self.mech_died[1][0]-2,self.mech_died[1][0]+2))
                 ylist = list(range(self.mech_died[1][1]-2,self.mech_died[1][1]+2))
                 x = np.random.choice(xlist,1)[0]
-                y = np.randon.choice(ylist,1)[0]
+                y = np.random.choice(ylist,1)[0]
                 if self.hexes[x,y,0] == 0:
                     self.hexes[x,y,:] = tofill[n]
                     n += 1
         elif self.mech_died[1] == 'init':
             #print('_mech_pilot')
-            print(champs)
-            selected = np.random.choice(champs,3)
+            selected = np.random.choice(len(champs),3,replace=False)
             xy = np.random.choice(selected,1)[0]
+            selected = [champs[sel] for sel in selected]
             items = []
             it = 0
             self.mech1 = self.hexes[selected[0][0],selected[0][1],:]
             self.mech2 = self.hexes[selected[1][0],selected[1][1],:]
             self.mech3 = self.hexes[selected[2][0],selected[2][1],:]
             for sel in selected:
-                if sel == xy:
+                if str(sel) == str(champs[xy]):
                     continue
                 else:
-                    self.hexes[xy[0],xy[1],1] = 100
-                    self.hexes[xy[0],xy[1],2:14] += self.hexes[sel[0],sel[1],2:14]
+                    self.hexes[champs[xy][0],champs[xy][1],1] = 100
+                    self.hexes[champs[xy][0],champs[xy][1],2:14] += self.hexes[sel[0],sel[1],2:14]
                 for i in range(3):
                     item = self.hexes[sel[0],sel[1],17+2*i:19+2*i]
+                    self.hexes[champs[xy][0],champs[xy][1],17] += self.hexes[sel[0],sel[1],17]
                     if sum(item) == 0:
                         continue
                     is_chosen = np.random.choice([0,1],1)
                     if it > 3:
                         continue
                     if is_chosen != 0:
-                        self.hexes[xy[0],xy[1],17+2*it:19+2*it] = item
+                        self.hexes[champs[xy][0],champs[xy][1],17+2*it:19+2*it] = item
                         it += 1
+                self.hexes[champs[xy][0],champs[xy][1],17] = \
+                    int(self.hexes[champs[xy][0],champs[xy][1],17]/3)
     def _rebel(self,champs,effect):
         if self.tic == 0:
             #print('_rebel')
@@ -174,9 +179,7 @@ class Synergy:
             for champ in champs:
                 self.hexes[champ[0],champ[1],2] += effect
     def _demolitionist(self,champs,effect):
-        #print('_demolitionist')
-        for skilled in self.demol_skilled:
-            self.hexes[skilled[0],skilled[1],18] = 2 # stunned for 2 tics
+        self.is_demol = True
     def _infiltrator(self,champs,effect):
         #print('_infiltrator')
         self.is_infil = True
@@ -187,11 +190,7 @@ class Synergy:
             for champ in champs:
                 self.hexes[champ[0],champ[1],6] += effect
     def _mana_reaver(self,champs,effect):
-        '''
-        later
-        '''
-        #print('_mana_reaver')
-        1 == 1
+        self.is_mana = True
     def _mercenary(self,champs,effect):
         '''
         later
@@ -207,7 +206,7 @@ class Synergy:
         #print('_protector')
         self.is_protector = True
         for prot in self.protector_skillcast:
-            self.hexes[prot[0],prot[1],2] += self.start_hexes[prot[0],prot[1],2]*effect
+            self.hexes[prot[0],prot[1],25] += self.start_hexes[prot[0],prot[1],25]*effect
             '''disappear shield later'''
     def _sniper(self,champs,effect):
         self.is_sniper = True

@@ -26,6 +26,7 @@ class Skill:
         self.annie = False
         self.gangplank = False
         #effect
+        self.demol = False
         self.master_yi = False
         self.kayle = True
         self.jinx = False
@@ -65,7 +66,8 @@ class Skill:
         enemies = [[x,y] for x,y in zip(xy[0],xy[1])]
         self.myopp = self.hexes[self.arr[0],self.arr[1],0]
         if ind == 100:
-            torf = self.skills[-1](enemies)
+            print(level)
+            torf = self.skills[-1](int(level-1),enemies)
         else:
             torf = self.skills[int(ind)](int(level),enemies)
         self.hexes[self.arr[0],self.arr[1],9] = 0
@@ -88,11 +90,14 @@ class Skill:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
         self.hexes[tx,ty,18] = stun[level]
     def _ziggs(self,level,enemies,damage=[250,325,550],stop=False):
+
         tx,ty = self._find_target(enemies)
         if (damage[level] - self.hexes[tx,ty,8])/2 < 0 :
             1 == 1
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+            if self.demol:
+                self.hexes[tx,ty,18] += 2
     def _xayah(self,level,enemies,speed=[1,1.25,1.5],duration=[8,8,8],stop=False):
         if stop:
             self.hexes[self.arr[0],self.arr[1],6] -= speed[level]
@@ -403,7 +408,11 @@ class Skill:
             self.hexes[tx,ty,2] -= (damage*percent[level]-self.hexes[tx,ty,7])/2
         '''move 나중에'''
     def _rumble(self,level,enemies,damage=[250,400,800],stop=False):
-        '''damage 나중에 원뿔?'''
+        '''
+        damage 나중에 원뿔?
+        if self.demol:
+            self.hexes[tx,ty,18] += 2
+        '''
     def _neeko(self,level,enemies,damage=[200,275,550],stun=[3,5,7],stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         xy = np.where(self.hexes[self.arr[0]-2:self.arr[0]+3,
@@ -601,6 +610,8 @@ class Skill:
                     1 == 1
                 else:
                     self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+                    if self.demol:
+                        self.hexes[tx,ty,18] += 2
         else:
             tx,ty = self._find_target(enemies)
             self.gangplank = [self._boundary(tx,ty,-3,4)]
@@ -623,14 +634,14 @@ class Skill:
                 1 == 1
             else:
                 self.hexes[x,y,2] -= (damage[level] - self.hexes[x,y,8])/2
-    def _mech_garren(self,enemies,damage=750,stun=2,stop=False):
+    def _mech_garren(self,level,enemies,damage=[750,1250,1700],stun=2,stop=False):
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         tx,ty = self._find_target(enemies)
         x1,y1,x2,y2 = self._boundary(tx,ty,-1,2)
         xy = np.where(self.hexes[x1:x2,y1:y2,0]==enemy)
         targets = [[x,y] for x,y in zip(xy[0],xy[1])]
         for tx,ty in targets:
-            if (damage[level] - self.hexes[tx+x1,ty+y1,8])/2 < 0 :
+            if (damage[level] - self.hexes[int(tx)+x1,int(ty)+y1,8])/2 < 0 :
                 1 == 1
             else:
                 self.hexes[tx+x1,ty+y1,2] -= (damage[level] - self.hexes[tx+x1,ty+y1,8])/2

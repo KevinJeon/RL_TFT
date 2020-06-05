@@ -12,11 +12,11 @@ class RulebasedAgent(object):
                 else:
                     synergy[str(syn)] += 1
         return synergy
-    def bef_action(money,player_level,five_champs,five_cost,total_units):
+    def bef_action(money,player_level,five_champs,five_cost,total_units,life=None):
         synergy = RulebasedAgent._synergy(total_units)
         sorted_syns = sorted(synergy.items(),key=operator.itemgetter(0))
-        if len(sorted_syns) > 4:
-            sorted_syns = sorted_syns[:4]
+        if len(sorted_syns) > 3:
+            sorted_syns = sorted_syns[:3]
         RulebasedAgent.top_syns = [int(syn[0]) for syn in sorted_syns]
         a = list(range(9))
         # base rule
@@ -50,12 +50,14 @@ class RulebasedAgent(object):
                             print(five_champs)
                             ind = a.index(i)
                             return i
+        #if life < 20:
+        #    np.random.choice([7,8],1,p=[0.7,0.3])[0]
         if total_units:
             ind = a.index(6)
             del a[ind]
         if money <= 0:
             a = [5]
-        if money <= 50:
+        if money <= 30:
             a = [5]
         else:
             return np.random.choice([7,8],1,p=[0.7,0.3])[0]

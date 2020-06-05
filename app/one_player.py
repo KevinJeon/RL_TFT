@@ -26,6 +26,7 @@ class Player:
         self.fight_items = []
         self.wait_units = []
         self.agent = agent
+        self.unit_number = 0
     def init_player(self):
         # init game
         self.money = 0 # 돈
@@ -39,16 +40,35 @@ class Player:
         self.player_synergy = dict()
     def _champ_queue(self):
         self.five_champs,self.five_cost = [],[]
-        stars = np.bincount(np.random.choice(5,size=5,
-            p=self.champ_distribution['l'+str(self.player_level)]))
-        for rem,star,n_champs in zip(self.removal.items(),stars,self.champ_cost_info.items()):
-            n_champs = n_champs[1]
-            for r in rem[1]:
-                n_champs.remove(r)
-            champs = np.random.choice(len(n_champs),size=star)
-            self.five_champs += [n_champs[c] for c in champs]
+        tofill = 5
+        while True:
+            stars = np.bincount(np.random.choice(5,size=tofill,
+                p=self.champ_distribution['l'+str(self.player_level)]))
+            for rem,star,n_champs in zip(self.removal.items(),stars,self.champ_cost_info.items()):
+                n_champs = n_champs[1]
+                for r in rem[1]:
+                    if r in n_champs:
+                        n_champs.remove(r)
+                cnts = [self.champ_state_info[champ]['count'] for champ in n_champs]
+                candidates = list(range(len(n_champs)))
+                if sum(cnts) == 0:
+                    continue
+                prob = [c/sum(cnts) for c in cnts]
+                #print('n_champs : {}, removal {}, star {}'.format(n_champs,self.removal,star))
+                champs = np.random.choice(candidates,size=star,p=prob)
+                self.five_champs += [n_champs[c] for c in champs]
+            for c in self.five_champs:
+                if self.champ_state_info[c]['count'] < self.five_champs.count(c):
+                    erase = self.five_champs.count(c) - self.champ_state_info[c]['count']
+                    for e in range(erase):
+                        print('erase!')
+                        print(len(self.five_champs))
+                        print(self.five_champs)
+                        self.five_champs.remove(c)
+            tofill = 5 - len(self.five_champs)
+            if tofill == 0:
+                break
         self.five_cost += [self._cost(c+'_1') for c in self.five_champs]
-        msg = 'champ queue make!\n{}'.format(self.five_champs)
     def _cost(self,champ):
         cost_info = np.array([1,3,5])
         level = int(champ[-1])
@@ -98,7 +118,6 @@ class Player:
         syn = np.bincount(syn_list)
         for n,((k,i),s) in enumerate(zip(self.synergy_info.items(),syn)):
             rate = 0
-            #print(k,i['rate'],s)
             while s >= i['rate'][rate]:
                 rate += 1
                 if rate >= len(i['rate']):
@@ -111,12 +130,14 @@ class Player:
                 self.player_synergy[k] = dict(champ=champs,
                     effect=i['effect'][rate-1],index=n)
     def champ_append(self,champ,item=None):
+        self.unit_number += 1
         if champ in self.total_units.keys():
             self.total_units[champ]['count'] += 1
             if item:
                 self.total_units[champ]['item'] += item
                 self.total_units[champ]['owner'].append(1)
             if self.total_units[champ]['count'] == 3:
+                self.unit_number -= 2
                 levup = int(champ[-1]) + 1
                 levup_champ = champ[:-1] + str(levup)
                 self.champ_append(levup_champ,self.total_units[champ]['item'])
@@ -138,6 +159,7 @@ class Player:
             else:
                 self.total_units[champ] = dict(count=1,synergy=synergy,info=info,
                     item=[],owner=[],num=num)
+
             if level == '3':
                 for c in self.champ_cost_info.items():
                     if champ[:-2] in c[1]:
@@ -153,10 +175,13 @@ class Player:
                 self.player_level += 1
             self.champ_prob = self.champ_distribution['l'+str(self.player_level)]
     def _before_fight(self,act1):
+        champ_queue = [None,None]
         if act1 <= 4:
             cost = self._cost(self.five_champs[act1]+'_1')
             self.money -= cost
             self.champ_append(self.five_champs[act1]+'_1',None)
+            champ_queue = [self.five_champs[act1],-1]
+            print('buy!',champ_queue)
             self.five_champs[act1] = False
             self.is_prepared = False
         elif act1 == 5:
@@ -165,10 +190,13 @@ class Player:
             ind = np.random.choice(len(self.total_units.keys()))
             champ = list(self.total_units.keys())[ind]
             self.money += self._cost(champ)
+            self.unit_number -= 1
             self.total_units[champ]['count'] -= 1
+            champ_queue = [champ[:-2],3**(int(champ[-1])-1)]
+            print('sell!',[champ[:-2],3**(int(champ[-1])-1)])
             if self.total_units[champ]['count'] == 0:
                 if self.total_units[champ]['item']:
-                    self.items += self.total_units[champ]['item']
+                    self.wait_items += self.total_units[champ]['item']
                 del self.total_units[champ]
             self.is_prepared = False
         elif act1 == 7:
@@ -181,6 +209,7 @@ class Player:
             self.money -= 4
             self.is_prepared = False
         self._update_synergy()
+        return champ_queue
     def _rearrange(self,action=None):
         # random pick & random arrange
         units,syns = [],[]
@@ -235,17 +264,20 @@ class Player:
         self.xp += 2
         self._player_levelup()
         self.is_prepared = False
+        champ_queues = []
         while self.is_prepared != True:
             act = self.agent.bef_action(self.money,self.player_level,self.five_champs,
                 self.five_cost,self.total_units)
-            print(act)
-            print(self.act1_spc[act])
-            self._before_fight(act)
+            #print(act)
+            #print(self.act1_spc[act])
+            champ_queue = self._before_fight(act)
+            champ_queues.append(champ_queue)
             if act == 5:
                 self.is_prepared = True
                 self._rearrange(action=self.agent.rearr_action)
                 self._assign_item()
                 self._update_synergy()
+        return champ_queues
     def result(self,result):
         msg = ('-----------------------\n'+\
             '{}\n'+\

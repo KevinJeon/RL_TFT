@@ -10,6 +10,8 @@ class Fight:
     '''
     def __init__(self,my,opp,cur_round):
         myskill = None
+        my = copy.deepcopy(my)
+        opp =copy.deepcopy(opp)
         self.cur_round = cur_round
         # first agent info
         self.myunits = my.fight_units
@@ -39,6 +41,7 @@ class Fight:
         self.oppsyns = dict()
         self.mywait = my.wait_units
         self.oppwait = opp.wait_units
+        self.is_ai = False
     def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,
         oppnum,opparr,oppitems,oppsyn,oppinfo,max=True):
         '''
@@ -53,7 +56,6 @@ class Fight:
             hexes[oa[0],oa[1],-1] = n
             hexes[oa[0],oa[1],0] = -1
             hexes[oa[0],oa[1],1] = on
-            print(find_name(on),oinf['mana'][mana],mana)
             hexes[oa[0],oa[1],2] = oinf['health']
             hexes[oa[0],oa[1],3] = oinf['mana'][mana]
             hexes[oa[0],oa[1],4] = oinf['attack_range']
@@ -85,7 +87,6 @@ class Fight:
             hexes[ma[0],ma[1],-1] = n
             hexes[ma[0],ma[1],0] = 1
             hexes[ma[0],ma[1],1] = mn
-            print(find_name(mn),minf['mana'][mana],mana)
             hexes[ma[0],ma[1],2] = minf['health']
             hexes[ma[0],ma[1],3] = minf['mana'][mana]
             hexes[ma[0],ma[1],4] = minf['attack_range']
@@ -156,7 +157,7 @@ class Fight:
         return hexes
     def _one_champ_tic(self,hexes,attack_range,arr,you,opp,enemies,tic,
         void=False,sniper=False,pirate=False,starguard=False,protector=False,
-        valkyrie=False,infiltrator=False):
+        valkyrie=False,infiltrator=False,demolitionist=False):
         tiles = np.tile(np.array(arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
         nearest_dist = np.min(dist)
@@ -172,6 +173,8 @@ class Fight:
         elif hexes[arr[0],arr[1],9] == 1:
             #print('{} cast skill!'.format(find_name(int(hexes[arr[0],arr[1],1]))))
             self.skill.arr = arr
+            if demolitionist:
+                self.skill.demol = arr
             hexes,torf = self.skill.cast(opp)
             if torf:
                 self._one_champ_tic(hexes,attack_range,arr,you,opp,enemies,tic,
@@ -281,7 +284,7 @@ class Fight:
             is_who = False
         return is_who
     def _syn_tic(self,hexes,syns,arr):
-        torf = [False]*7
+        torf = [False]*8
         if syns.is_sniper:
             torf[0] = self._is_who(hexes,arr,19)
         elif syns.is_pirate:
@@ -296,6 +299,8 @@ class Fight:
             torf[5] = self._is_who(hexes,arr,18)
         elif syns.is_infil:
             torf[6] = self._is_who(hexes,arr,14)
+        elif syns.is_demol:
+            torf[7] = self._is_who(hexes,arr,13)
         return torf
     def _fight_tic(self,hexes,n,draw=False,view=False,*kwargs):
         '''2 tic = 1 seconds'''
@@ -311,7 +316,6 @@ class Fight:
         self.oppsyns['protector_skillcast'] = []
         self.skill.tic = n
         tofill = abs(len(self.opparr)-len(self.myarr))
-        print('before start',len(self.opparr),len(self.myarr))
         if len(self.opparr) > len(self.myarr):
             self.myarr += [None] * tofill
         else:
@@ -326,12 +330,11 @@ class Fight:
                 if len(oa_enemies) == 0:
                     pass
                 else:
-                    osni,opir,ovoi,osta,opro,oval,oinf = self._syn_tic(hexes,self.oppsyn_infos,oa)
+                    osni,opir,ovoi,osta,opro,oval,oinf,odem = self._syn_tic(hexes,self.oppsyn_infos,oa)
                     hexes,attack_info = self._one_champ_tic(hexes,oar,oa,-1,1,oa_enemies,
                         tic,sniper=osni,pirate=opir,void=ovoi,starguard=osta,protector=opro,
-                        valkyrie=oval,infiltrator=oinf)
+                        valkyrie=oval,infiltrator=oinf,demolitionist=odem)
                     attack_infos.append(attack_info)
-            print('after oa',len(self.opparr),len(self.myarr))
             if not (ma == None):
                 ma = list(ma)
                 mar = hexes[ma[0],ma[1],4]
@@ -341,12 +344,11 @@ class Fight:
                 if len(ma_enemies) == 0:
                     pass
                 else:
-                    msni,mpir,mvoi,msta,mpro,mval,minf = self._syn_tic(hexes,self.mysyn_infos,ma)
+                    msni,mpir,mvoi,msta,mpro,mval,minf,mdem = self._syn_tic(hexes,self.mysyn_infos,ma)
                     hexes,attack_info = self._one_champ_tic(hexes,mar,ma,1,-1,ma_enemies,
                         tic,sniper=msni,pirate=mpir,void=mvoi,starguard=msta,protector=mpro,
-                        valkyrie=mval,infiltrator=minf)
+                        valkyrie=mval,infiltrator=minf,demolitionist=mdem)
                     attack_infos.append(attack_info)
-            print('after ma',len(self.opparr),len(self.myarr))
         self._read_hexes(hexes)
         if draw:
             self.visualize(hexes,n,attack_infos)
@@ -395,11 +397,20 @@ class Fight:
         '''
         myopp = self.cur_hexes[:,:,0]
         round_damage = [0,3,4,5,10,15,20]
+        if (self.myarr == []) and (self.opparr == []):
+            round = round_damage[int(self.cur_round[0])]
+            if self.is_ai:
+                return False,False,round
+            return False,0,round
         if self.myarr == []:
             count = len(self.opparr)
             round = round_damage[int(self.cur_round[0])]
+            if self.is_ai:
+                return False,False,round
             return False,False,count+round
         elif self.opparr == []:
+            if self.is_ai:
+                return False,True,0
             count = len(self.myarr)
             round = round_damage[int(self.cur_round[0])]
             return False,True,count+round
@@ -417,7 +428,7 @@ class Fight:
         infos.hexes = self.cur_hexes
         infos.apply()
         self.cur_hexes = infos.hexes
-    def fight(self,video=False):
+    def fight(self,video=False,gui=False):
         notend = True
         n = 0
         self.mysyn_infos = Synergy(self.cur_hexes,self.start_hexes,self.mysyn,n,self.myarr,
@@ -432,7 +443,8 @@ class Fight:
         #self.start_hexes = copy_hexes
         self.money = 0
         self.item = []
-        self.init_view()
+        if gui:
+            self.init_view()
         self.skill = Skill(self.cur_hexes,self.start_hexes,tic=n)
         self.skill.mywait = self.mywait
         self.skill.oppwait = self.oppwait
@@ -442,7 +454,7 @@ class Fight:
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
-            self.cur_hexes = self._fight_tic(self.cur_hexes,n,draw=False,view=True)
+            self.cur_hexes = self._fight_tic(self.cur_hexes,n,draw=False,view=gui)
             self._die()
             self.skill.hexes = self.cur_hexes
             self.skill.maxhexes = self.start_hexes
@@ -487,7 +499,7 @@ class Fight:
         self.gui.infos = infos
         self.gui.update_champs(self.gui.game,infos)
         self.gui.root.update()
-        time.sleep(0.01)
+        time.sleep(0.001)
     def view(self):
         sefl.gui.root.mainloop()
     def infos(self):
