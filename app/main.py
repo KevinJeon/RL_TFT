@@ -4,7 +4,6 @@ import numpy as np
 from agent.random_agent import RandomAgent
 from agent.rulebased_agent import RulebasedAgent
 from one_player import Player
-from utils.draw import make_video
 import json
 import os
 def main():
@@ -46,7 +45,6 @@ if __name__ == '__main__':
         jdk = [int(k) for k in jd.keys()]
         jdk = sorted(jdk,reverse=True)
     n = jdk[0]
-    print(jdk)
     for i in range(100):
         place_table = main()
         sorted_place = sorted(place_table,key=(lambda x:x[1]))
@@ -54,7 +52,3 @@ if __name__ == '__main__':
         if i % 10 == 0:
             with open('result.json', 'w', encoding='utf-8') as f:
                 json.dump(jd, f, indent="\t")
-
-    #folders = os.listdir('./fig')
-    #i = np.random.choice(len(folders),1)[0]
-    #make_video('./fig/{}'.format(folders[i]),'./fig/ex.avi')

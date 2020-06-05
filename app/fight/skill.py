@@ -66,7 +66,6 @@ class Skill:
         enemies = [[x,y] for x,y in zip(xy[0],xy[1])]
         self.myopp = self.hexes[self.arr[0],self.arr[1],0]
         if ind == 100:
-            print(level)
             torf = self.skills[-1](int(level-1),enemies)
         else:
             torf = self.skills[int(ind)](int(level),enemies)

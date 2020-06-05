@@ -61,9 +61,6 @@ class Player:
                 if self.champ_state_info[c]['count'] < self.five_champs.count(c):
                     erase = self.five_champs.count(c) - self.champ_state_info[c]['count']
                     for e in range(erase):
-                        print('erase!')
-                        print(len(self.five_champs))
-                        print(self.five_champs)
                         self.five_champs.remove(c)
             tofill = 5 - len(self.five_champs)
             if tofill == 0:

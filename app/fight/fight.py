@@ -1,6 +1,6 @@
 import numpy as np
 import copy,os
-from utils.draw import draw_chess,make_video,find_name
+from utils.function import *
 from utils.view import GUI
 from buff.synergy import Synergy
 from fight.skill import Skill
@@ -113,6 +113,7 @@ class Fight:
             # index 26 is shield remain time
             # index 26 is skill own buff
             # index 27 is skill remain time
+            # index 28.29 is point of hex(x,y)
         return hexes
     def _read_hexes(self,hexes):
         status = hexes[:,:,0]
@@ -123,23 +124,12 @@ class Fight:
     def _move(self,hexes,arr1,targ):
         '''
         1 tic에 1 move 가져감.
-        todo : 지능적 움직임
         '''
         moved = copy.copy(arr1)
-        diff = targ - arr1
-        absdiff = abs(diff)
-        ind = np.argmax(absdiff)
-        if diff[ind] < 0:
-            moved[ind] -= 1
-            if hexes[moved[0],moved[1],0] != 0:
-
-                moved[ind] += 1
-        elif diff[ind] == 0:
-            print('error!',targ,arr1)
-        else:
-            moved[ind] += 1
-            if hexes[moved[0],moved[1],0] != 0:
-                moved[ind] -= 1
+        dir = a_star(hexes,arr1,targ)
+        moved[0] += dir[0]
+        moved[1] += dir[1]
+        print('moved',moved)
         return moved
     def _fly_infil(self,hexes,arr,you):
         if you == 1:
@@ -159,7 +149,10 @@ class Fight:
         void=False,sniper=False,pirate=False,starguard=False,protector=False,
         valkyrie=False,infiltrator=False,demolitionist=False):
         tiles = np.tile(np.array(arr),(len(enemies),1))
-        dist = np.max(abs(tiles-enemies),axis=1)
+        diff = abs(tiles[:,0]-enemies[:,0] - tiles[:,1] + enemies[:,1])
+        dx,dy = abs(tiles[:,0]-enemies[:,0]),abs(- tiles[:,1] + enemies[:,1])
+        dist = np.vstack([dx,dy,diff])
+        dist = np.max(dist,axis=0)
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
         arrind = hexes[arr[0],arr[1],1]
@@ -302,7 +295,7 @@ class Fight:
         elif syns.is_demol:
             torf[7] = self._is_who(hexes,arr,13)
         return torf
-    def _fight_tic(self,hexes,n,draw=False,view=False,*kwargs):
+    def _fight_tic(self,hexes,n,view=False,*kwargs):
         '''2 tic = 1 seconds'''
         tic = 2
         attack_infos = []
@@ -350,8 +343,6 @@ class Fight:
                         valkyrie=mval,infiltrator=minf,demolitionist=mdem)
                     attack_infos.append(attack_info)
         self._read_hexes(hexes)
-        if draw:
-            self.visualize(hexes,n,attack_infos)
         if view:
             self.accumulate()
         return hexes
@@ -454,7 +445,7 @@ class Fight:
             if n != 0:
                 self._synergy(self.mysyn_infos,self.mysyns,n)
                 self._synergy(self.oppsyn_infos,self.oppsyns,n)
-            self.cur_hexes = self._fight_tic(self.cur_hexes,n,draw=False,view=gui)
+            self.cur_hexes = self._fight_tic(self.cur_hexes,n,view=gui)
             self._die()
             self.skill.hexes = self.cur_hexes
             self.skill.maxhexes = self.start_hexes
@@ -462,22 +453,10 @@ class Fight:
             n += 1
             if n > 1000:
                 self.cur_hexes[:,:,2] = 0
-        print('my pirate money {}'.format(self.mysyn_infos.pirate_money))
-        print('my pirate money {}'.format(self.mysyn_infos.pirate_item))
-        print('enemy pirate money {}'.format(self.oppsyn_infos.pirate_money))
-        print('enemy pirate money {}'.format(self.oppsyn_infos.pirate_item))
         if video:
             dir = './fig/{}'.format(self.cur_round)
             make_video(dir,dir+'/{}.avi'.format(self.cur_round))
         return win,life_change
-    def visualize(self,hexes,n,attack_infos):
-        if not os.path.exists('./fig/{}'.format('ROUND_'+self.cur_round)):
-            os.mkdir('./fig/{}'.format('ROUND_'+self.cur_round))
-        if not os.path.exists('./fig/{}/{}vs{}'.format('ROUND_'+self.cur_round,self.myname,self.oppname)):
-            os.mkdir('./fig/{}/{}vs{}'.format('ROUND_'+self.cur_round,self.myname,self.oppname))
-        fn = (4 - len(str(n)))*'0' + str(n)
-        imgname = './fig/{}/{}vs{}/frame_{}.jpg'.format('ROUND_'+self.cur_round,self.myname,self.oppname,fn)
-        draw_chess(hexes,self.start_hexes,imgname,attack_infos)
     def init_view(self):
         name = []
         cost = []
@@ -499,7 +478,7 @@ class Fight:
         self.gui.infos = infos
         self.gui.update_champs(self.gui.game,infos)
         self.gui.root.update()
-        time.sleep(0.001)
+        time.sleep(0.2)
     def view(self):
         sefl.gui.root.mainloop()
     def infos(self):
