@@ -7,8 +7,12 @@ from one_player import Player
 from utils.draw import make_video
 import json
 import os
-import copy
-def main(env):
+def main():
+    keys = dict()
+    for k,i in cfg.__dict__.items():
+        if k[:2] != '__':
+            keys[k] = i
+    env = TFT_env(**keys)
     # plug-in the player
     rand = RandomAgent
     rule = RulebasedAgent
@@ -30,33 +34,27 @@ def main(env):
     env.agent8 = agent8
     env.init_game()
     while len(env.players) > 1:
-        env.play_round(gui=False)
-    return env.final_place
+        env.play_round()
+    msg = ('Last Surviver is {}\n'+\
+        'Winner champ is {}\n'+\
+        'Winner synergy is {}\n').format(env.players[0].name,
+            env.players[0].total_units.keys(),env.players[0].player_synergy)
+    return env.place_table
 if __name__ == '__main__':
-    if os.path.exists('result.json'):
-        with open('result.json','r') as f:
-            print('hi')
-            jd = json.load(f)
-    else:
-        jd = dict()
-    keys = dict()
-    cfgs = cfg.__dict__.items()
-    for k,i in cfgs:
-        if k[:2] != '__':
-            keys[k] = i
-    for i in range(300):
-        keys_copy = copy.deepcopy(keys)
-        msg = ('-----------------------\n'+\
-            '{} th game start!\n'+\
-            '-----------------------').format(i)
-        print(msg)
-        print(keys_copy['champ_state_info'])
-        env = TFT_env(**keys_copy)
-        final_place = main(env)
-    #    for agent in final_place.keys():
-    #        if agent not in jd.keys():
-    #            jd[agent] = [final_place[agent]]
-    #        else:
-    #            jd[agent].append(final_place[agent])
-    #        with open('result.json', 'w', encoding='utf-8') as f:
-    #            json.dump(jd, f, indent="\t")
+    with open('result.json','r') as f:
+        jd = json.load(f)
+        jdk = [int(k) for k in jd.keys()]
+        jdk = sorted(jdk,reverse=True)
+    n = jdk[0]
+    print(jdk)
+    for i in range(100):
+        place_table = main()
+        sorted_place = sorted(place_table,key=(lambda x:x[1]))
+        jd[str(i+n+1)] = sorted_place
+        if i % 10 == 0:
+            with open('result.json', 'w', encoding='utf-8') as f:
+                json.dump(jd, f, indent="\t")
+
+    #folders = os.listdir('./fig')
+    #i = np.random.choice(len(folders),1)[0]
+    #make_video('./fig/{}'.format(folders[i]),'./fig/ex.avi')
