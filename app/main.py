@@ -38,17 +38,14 @@ def main():
         'Winner champ is {}\n'+\
         'Winner synergy is {}\n').format(env.players[0].name,
             env.players[0].total_units.keys(),env.players[0].player_synergy)
-    return env.place_table
+    return env.final_place
 if __name__ == '__main__':
     with open('result.json','r') as f:
         jd = json.load(f)
-        jdk = [int(k) for k in jd.keys()]
-        jdk = sorted(jdk,reverse=True)
-    n = jdk[0]
     for i in range(100):
-        place_table = main()
-        sorted_place = sorted(place_table,key=(lambda x:x[1]))
-        jd[str(i+n+1)] = sorted_place
+        final_place = main()
+        for k,it in final_place.items():
+            jd[k] += it
         if i % 10 == 0:
             with open('result.json', 'w', encoding='utf-8') as f:
                 json.dump(jd, f, indent="\t")

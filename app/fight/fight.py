@@ -29,8 +29,8 @@ class Fight:
         self.oppsyn = opp.player_synergy
         self.oppinfo = opp.fight_infos
         self.oppname = opp.name
-        hexes1 = np.zeros((7,8,34))
-        hexes2 = np.zeros((7,8,34))
+        hexes1 = np.zeros((7,8,30))
+        hexes2 = np.zeros((7,8,30))
         self.start_hexes = self._assign_hexes(hexes1,self.mynum,self.myarr,self.myitems,
             self.mysyn,self.myinfo,self.oppnum,self.opparr,self.oppitems,self.oppsyn,
             self.oppinfo,max=True)
@@ -82,6 +82,7 @@ class Fight:
             # index 26 is shield remain time
             # index 26 is skill own buff
             # index 27 is skill remain time
+            # index 28.29 is point of hex(x,y)
         for mu,mn,ma,mitem,minf in zip(self.myunits,mynum,myarr,myitems,myinfo):
             n += 1
             hexes[ma[0],ma[1],-1] = n
@@ -125,11 +126,7 @@ class Fight:
         '''
         1 tic에 1 move 가져감.
         '''
-        moved = copy.copy(arr1)
-        dir = a_star(hexes,arr1,targ)
-        moved[0] += dir[0]
-        moved[1] += dir[1]
-        print('moved',moved)
+        moved = a_star(hexes,arr1,targ)
         return moved
     def _fly_infil(self,hexes,arr,you):
         if you == 1:
@@ -148,11 +145,16 @@ class Fight:
     def _one_champ_tic(self,hexes,attack_range,arr,you,opp,enemies,tic,
         void=False,sniper=False,pirate=False,starguard=False,protector=False,
         valkyrie=False,infiltrator=False,demolitionist=False):
-        tiles = np.tile(np.array(arr),(len(enemies),1))
-        diff = abs(tiles[:,0]-enemies[:,0] - tiles[:,1] + enemies[:,1])
-        dx,dy = abs(tiles[:,0]-enemies[:,0]),abs(- tiles[:,1] + enemies[:,1])
-        dist = np.vstack([dx,dy,diff])
-        dist = np.max(dist,axis=0)
+        h_enemies = [[enemy[0]+round(enemy[1]/2+0.001),enemy[1]] for enemy in enemies]
+        h_enemies = np.array(h_enemies)
+        h_arr = [arr[0]+round(arr[1]/2+0.001),arr[1]]
+        tiles = np.tile(np.array(h_arr),(len(h_enemies),1))
+        diff = abs(tiles[:,0]-h_enemies[:,0] - tiles[:,1] + h_enemies[:,1])
+        dx,dy = abs(tiles[:,0]-h_enemies[:,0]),abs(- tiles[:,1] + h_enemies[:,1])
+        dx,dy = np.reshape(dx,(-1,1)),np.reshape(dy,(-1,1))
+        diff = np.reshape(diff,(-1,1))
+        dist = np.hstack([dx,dy,diff])
+        dist = np.max(dist,axis=1)
         nearest_dist = np.min(dist)
         ind = np.argmin(dist)
         arrind = hexes[arr[0],arr[1],1]
@@ -164,7 +166,6 @@ class Fight:
             attack_info = [arrind,'jump to',arr,arrind]
             return hexes,attack_info
         elif hexes[arr[0],arr[1],9] == 1:
-            #print('{} cast skill!'.format(find_name(int(hexes[arr[0],arr[1],1]))))
             self.skill.arr = arr
             if demolitionist:
                 self.skill.demol = arr
@@ -208,9 +209,6 @@ class Fight:
                 dprob = [0,1]
             dodge = np.random.choice([0,1],p=dprob)
             damage = damage * dodge
-            #print('{} attack! damage : {}, {}'.format(\
-            #    find_name(int(hexes[arr[0],arr[1],1])),damage,hexes[enemies[ind][0],enemies[ind][1],2]))
-            #print('shield {}'.format(hexes[enemies[ind][0],enemies[ind][1],25]))
             if hexes[enemies[ind][0],enemies[ind][1],25] > 0 :
                 hexes[enemies[ind][0],enemies[ind][1],25] -= damage/tic*hexes[arr[0],arr[1],6]
                 if hexes[enemies[ind][0],enemies[ind][1],25] < 0:
@@ -232,12 +230,15 @@ class Fight:
             attack_info = copy.copy([eneind,damage/tic*hexes[arr[0],arr[1],6],arr,arrind])
             return hexes,attack_info
         else:
-            #print('{} move!'.format(find_name(int(hexes[arr[0],arr[1],1]))))
+            print('enemies',enemies,'henemies',h_enemies)
+            print(find_name(int(hexes[arr[0],arr[1],1])),'h_arr',h_arr,'arr',arr)
+            print('dist',dist)
+            print('nearest_dist',nearest_dist)
             targ = enemies[ind]
             eneind = copy.copy(hexes[targ[0],targ[1],1])
             attack_info = [eneind,0]
             moved = self._move(hexes,arr,targ)
-            if moved != arr:
+            if str(moved) != str(arr):
                 hexes[moved[0],moved[1],:] = hexes[arr[0],arr[1],:]
                 self.start_hexes[moved[0],moved[1],:] = self.start_hexes[arr[0],arr[1],:]
                 self.start_hexes[arr[0],arr[1],:] = 0
