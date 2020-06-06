@@ -13,5 +13,6 @@ docker run -it -e "DISPLAY" -v /tmp/.X11-unix/:/tmp/.X11-unix/ rl_tft
 - [ ] Modularize a big file into smaller pieces.
 - [ ] Make use of Environment variables for configuration.
 - [ ] Extend this Todo list.
-
+- [ ] Make Pathfinder.
+- [ ] Update View File
 
