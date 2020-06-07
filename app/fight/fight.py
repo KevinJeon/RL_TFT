@@ -230,10 +230,10 @@ class Fight:
             attack_info = copy.copy([eneind,damage/tic*hexes[arr[0],arr[1],6],arr,arrind])
             return hexes,attack_info
         else:
-            print('enemies',enemies,'henemies',h_enemies)
-            print(find_name(int(hexes[arr[0],arr[1],1])),'h_arr',h_arr,'arr',arr)
-            print('dist',dist)
-            print('nearest_dist',nearest_dist)
+            #print('enemies',enemies,'henemies',h_enemies)
+            #print(find_name(int(hexes[arr[0],arr[1],1])),'h_arr',h_arr,'arr',arr)
+            #print('dist',dist)
+            #print('nearest_dist',nearest_dist)
             targ = enemies[ind]
             eneind = copy.copy(hexes[targ[0],targ[1],1])
             attack_info = [eneind,0]
@@ -243,7 +243,6 @@ class Fight:
                 self.start_hexes[moved[0],moved[1],:] = self.start_hexes[arr[0],arr[1],:]
                 self.start_hexes[arr[0],arr[1],:] = 0
                 hexes[arr[0],arr[1],:]  = 0
-                #hexes[arr[0],arr[1],26] = -tic-1
             arrind = hexes[moved[0],moved[1],1]
             attack_info += [moved,arrind]
             attack_info = copy.copy(attack_info)
@@ -257,7 +256,6 @@ class Fight:
         cur_mana = hexes[arr[0],arr[1],3]
         tot_mana = self.start_hexes[arr[0],arr[1],3]
         nm = find_name(int(hexes[arr[0],arr[1],1]))
-        #print('{} mana refill {}/{}'.format(nm,cur_mana,tot_mana))
         if tot_mana == 0:
             hexes[arr[0],arr[1],9] = 1
             return hexes
@@ -351,12 +349,8 @@ class Fight:
         self.cur_hexes[:,:,26] -= 1
         on_skill = np.where(self.cur_hexes[:,:,26]==1)
         onx,ony = on_skill
-        #print(self.cur_hexes[:,:,26])
-        #print(self.cur_hexes[:,:,0])
-        #print(self.cur_hexes[:,:,-1])
         for x,y in zip(onx,ony):
             self.skill.arr = [x,y]
-            #print('stop!',self.skill.arr)
             self.cur_hexes = self.skill.stop()
     def _off_stun(self):
         self.cur_hexes[:,:,18] -= 1

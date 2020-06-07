@@ -42,6 +42,7 @@ class Player:
         self.five_champs,self.five_cost = [],[]
         tofill = 5
         while True:
+            #print('tofill',tofill)
             stars = np.bincount(np.random.choice(5,size=tofill,
                 p=self.champ_distribution['l'+str(self.player_level)]))
             for rem,star,n_champs in zip(self.removal.items(),stars,self.champ_cost_info.items()):
@@ -54,6 +55,7 @@ class Player:
                 if sum(cnts) == 0:
                     continue
                 prob = [c/sum(cnts) for c in cnts]
+                print('champ cnts',cnts)
                 #print('n_champs : {}, removal {}, star {}'.format(n_champs,self.removal,star))
                 champs = np.random.choice(candidates,size=star,p=prob)
                 self.five_champs += [n_champs[c] for c in champs]

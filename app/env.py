@@ -101,6 +101,7 @@ class TFT_env:
                 if sum(cnts) == 0:
                     continue
                 prob = [c/sum(cnts) for c in cnts]
+                print('sushi cnts',cnts)
                 champs = list(np.random.choice(len(n_champs[1]),star,replace=False,p=prob))
                 self.sushi += [n_champs[1][c] for c in champs ]
                 tofill -= star
