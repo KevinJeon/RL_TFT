@@ -39,8 +39,8 @@ class Fight:
             self.oppinfo,max=False)
         self.mysyns = dict()
         self.oppsyns = dict()
-        self.mywait = my.wait_units
-        self.oppwait = opp.wait_units
+        self.mywait = my.wait_num
+        self.oppwait = opp.wait_num
         self.is_ai = False
     def _assign_hexes(self,hexes,mynum,myarr,myitems,mysyn,myinfo,
         oppnum,opparr,oppitems,oppsyn,oppinfo,max=True):

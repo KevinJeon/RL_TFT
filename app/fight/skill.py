@@ -2,7 +2,6 @@ import numpy as np
 import copy
 class Skill:
     def __init__(self,hexes,maxhexes,arr=None,tic=0):
-        '''마나 0인 챔프들 여기서 때려야함'''
         self.hexes = hexes
         self.maxhexes = maxhexes
         self.arr = arr
@@ -72,9 +71,6 @@ class Skill:
         self.hexes[self.arr[0],self.arr[1],9] = 0
         return self.hexes,torf
     def stop(self):
-        #print(self.hexes[:,:,26])
-        #print(self.hexes[:,:,0])
-        #print(self.hexes[:,:,-1])
         ind = self.hexes[self.arr[0],self.arr[1],1]
         level = self.hexes[self.arr[0],self.arr[1],17]
         self.myopp = self.hexes[self.arr[0],self.arr[1],0]

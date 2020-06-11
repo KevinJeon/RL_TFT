@@ -57,6 +57,7 @@ class TFT_env:
     def init_game(self):
         self.players = [self.agent1,self.agent2,self.agent3,self.agent4,self.agent5,
             self.agent6,self.agent7,self.agent8]
+        self.jd = dict(state=[],action=[])
         for n,player in enumerate(self.players):
             player.name = 'agent{}'.format(n+1)
             player.champ_distribution = self.champ_distribution
@@ -119,7 +120,11 @@ class TFT_env:
             player.champ_state_info = self.champ_state_info
             print(player.name)
             player.cur_round = self.cur_round
-            champ_queues = player.prepare_round()
+            champ_queues,action_sequence,arrange,num = player.prepare_round()
+            self.jd['action'].append(dict(buysell=action_sequence,arrange=arrange,chosen=num))
+            self.jd['state'].append(dict(xp=player.xp,money=player.money,wait=player.wait_num,
+                fight=player.fight_num,synergy=player.fight_synergy,life=player.life,
+                continuous=player.continuous))
             for champ,count in champ_queues:
                 if champ == None:
                     continue
@@ -169,10 +174,6 @@ class TFT_env:
             for i,m in enumerate(match_order):
                 a1 = self.players[m[0]]
                 a2 = self.players[m[1]]
-                #if a1.name == 'agent1':
-                #    print(a1.total_units)
-                #if a2.name == 'agent1':
-                #    print(a2.total_units)
                 fight = Fight(a1,a2,self.cur_round)
                 fight.my_queue = a1.five_champs
                 fight.my_cost = a1.five_cost

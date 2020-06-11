@@ -8,6 +8,7 @@ import json,os,copy
 
 def main(champ_state_info=None):
     keys = dict()
+    print(len(cfg.champ_level_info))
     for k,i in cfg.__dict__.items():
         if k[:2] != '__':
             keys[k] = i
@@ -40,16 +41,21 @@ def main(champ_state_info=None):
         'Winner champ is {}\n'+\
         'Winner synergy is {}\n').format(env.players[0].name,
             env.players[0].total_units.keys(),env.players[0].player_synergy)
-    return env.final_place
+    return env.final_place,env.jd
 if __name__ == '__main__':
     with open('result.json','r') as f:
         jd = json.load(f)
+    dataset = dict(state=[],action=[])
     for i in range(100):
         champ_state_info = copy.deepcopy(cfg.champ_state_info)
-        final_place = main(champ_state_info=champ_state_info)
+        final_place,data = main(champ_state_info=champ_state_info)
         for k,it in final_place.items():
             print(k,it)
             jd[k] += [it]
+        dataset['state'] += data['state']
+        dataset['action'] += data['action']
         #if i % 10 == 0:
         #    with open('result.json', 'w', encoding='utf-8') as f:
         #        json.dump(jd, f, indent="\t")
+    with open('dataset.json','w') as f:
+        json.dump(dataset,f)
