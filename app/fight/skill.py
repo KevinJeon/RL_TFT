@@ -69,7 +69,7 @@ class Skill:
         else:
             torf = self.skills[int(ind)](int(level),enemies)
         self.hexes[self.arr[0],self.arr[1],9] = 0
-        return self.hexes,torf
+        return self.hexes,torf,self.maxhexes
     def stop(self):
         ind = self.hexes[self.arr[0],self.arr[1],1]
         level = self.hexes[self.arr[0],self.arr[1],17]
@@ -100,7 +100,62 @@ class Skill:
             self.hexes[self.arr[0],self.arr[1],6] += speed[level]
             self.hexes[self.arr[0],self.arr[1],26] = duration[level]+1
     def _twistedfate(self,level,enemies,damage=[200,300,500],stop=False):
-        '''continuous is later tic for 6 tic'''
+        if stop:
+            torf = 0
+            for n,card in enumerate(self.card):
+                if len(card) == 0:
+                    continue
+                else:
+                    torf += len(card)
+                    tx,ty = card[0]
+                    if (damage[level] - self.hexes[tx,ty,8])/2 < 0 :
+                        1 == 1
+                    else:
+                        self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+                    self.card[n] = self.card[n][1:]
+            if torf > 0:
+                self.hexes[self.arr[0],self.arr[1],26] = 2
+        else:
+            card_move = [[-1,0],[-1,-1],[0,-1],[1,0],[1,1],[0,1]]
+            card_xy = []
+            dir_count = []
+            eneind = self.hexes[enemies[0][0],enemies[0][1],0]
+            for i in range(6):
+                count = 0
+                xy = []
+                card = np.array(self.arr) + np.array(card_move[i])
+                while True:
+                    if (card[0] < 0) or (card[0] > 6) or (card[1] < 0) or \
+                        (card[1] > 7):
+                        dir_count.append(count)
+                        break
+                    if self.hexes[card[0],card[1],0] == eneind:
+                        count += 1
+                    xy.append(copy.deepcopy(card))
+                    card += np.array(card_move[i])
+                card_xy.append(xy)
+            target = np.argmax(count)
+            inds = []
+            for i in range(-1,2):
+                if target+i == 7:
+                    inds.append(0)
+                else:
+                    inds.append(target+i)
+            self.card = [card_xy[i] for i in inds]
+            torf = 0
+            for n,card in enumerate(self.card):
+                if len(card) == 0:
+                    continue
+                else:
+                    torf += len(card)
+                    tx,ty = card[0]
+                    if (damage[level] - self.hexes[tx,ty,8])/2 < 0 :
+                        1 == 1
+                    else:
+                        self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
+                    self.card[n] = self.card[n][1:]
+            #print('card',self.card)
+            self.hexes[self.arr[0],self.arr[1],26] = 2
     def _poppy(self,level,enemies,damage=[100,175,250],shield=[200,350,500],stop=False):
         tx,ty = self._find_target(enemies)
         if (damage[level] - self.hexes[tx,ty,8])/2 < 0 :
@@ -109,7 +164,6 @@ class Skill:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
         self.hexes[self.arr[0],self.arr[1],25] += shield[level]/2
     def _malphite(self,level,enemies,shield=[0.4,0.45,0.5],stop=False):
-        '''0mana'''
         if self.tic == 0:
             self.hexes[self.arr[0],self.arr[1],2] += \
                 self.hexes[self.arr[0],self.arr[1],2]*shield[level]
@@ -199,7 +253,19 @@ class Skill:
         tx,ty = self._find_target(enemies)
         self.hexes[tx,ty,2] -= (hit[level]*self.hexes[self.arr[0],self.arr[1],6]*\
             self.hexes[self.arr[0],self.arr[1],5] - self.hexes[tx,ty,7])/2
-        '''move 구현해야함'''
+        yasuo_move = np.array([[-1,0],[-1,-1],[0,-1],[1,0],[1,1],[0,1]])
+        torf = False
+        while torf ==False:
+            for yasuo in yasuo_move:
+                if self.hexes[tx+yasuo[0],ty+yasuo[1],0] == 0:
+                    self.hexes[tx+yasuo[0],ty+yasuo[1],:] = \
+                        self.hexes[self.arr[0],self.arr[1],:]
+                    self.hexes[self.arr[0],self.arr[1],:] = 0
+                    self.maxhexes[tx+yasuo[0],ty+yasuo[1],:] = \
+                        self.maxhexes[self.arr[0],self.arr[1],:]
+                    self.maxhexes[self.arr[0],self.arr[1],:] = 0
+                    torf = True
+                    break
     def _xin_zhao(self,level,enemies,damage=[200,275,375],stop=False):
         if stop:
             tx,ty = self._find_target(self.xin_zhao)
@@ -279,6 +345,17 @@ class Skill:
                 else:
                     self.hexes[tx+x1,ty+y1,2] -= (damage[level] - self.hexes[tx+x1,ty+y1,8])/2
                 self.hexes[tx+x1,ty+y1,18] = stun[level]
+            rakan = np.where(self.hexes[x1:x2,y1:y2,0]==0)
+            rakan_candidates = [[x,y] for x,y in zip(rakan[0],rakan[1])]
+            rakan = np.random.choice(len(rakan_candidates),1)[0]
+            rakan = rakan_candidates[rakan]
+            self.hexes[x1+rakan[0],y1+rakan[1],:] = \
+                self.hexes[self.arr[0],self.arr[1],:]
+            self.hexes[self.arr[0],self.arr[1],:] = 0
+            self.maxhexes[x1+rakan[0],y1+rakan[1],:] = \
+                self.maxhexes[self.arr[0],self.arr[1],:]
+            self.maxhexes[self.arr[0],self.arr[1],:] = 0
+            print('Rakan',rakan,self.maxhexes[x1+rakan[0],y1+rakan[1],1])
     def _mordekaiser(self,level,enemies,shield=[350,500,800],damage=[50,75,125],stop=False):
         if stop:
             if self.hexes[self.arr[0],self.arr[1],25] < 0:
@@ -318,7 +395,7 @@ class Skill:
             1 == 1
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
-        '''move 구현해야함'''
+        dx,dy = np.sign(self.arr[0] - tx),np.sign(self.arr[1] - ty)
     def _kaisa(self,level,enemies,hit=[4,6,9],stop=False):
         tiles = np.tile(np.array(self.arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
@@ -344,9 +421,12 @@ class Skill:
             if self.hexes[tx,ty,2] > 0:
                 break
             enemies.remove([tx,ty])
+            self.hexes[tx,ty,:] = self.hexes[self.arr[0],self.arr[1],:]
+            self.hexes[self.arr[0],self.arr[1],:] = 0
+            self.maxhexes[tx,ty,:] = self.maxhexes[self.arr[0],self.arr[1],:]
+            self.maxhexes[self.arr[0],self.arr[1],:] = 0
             if len(enemies) == 0:
                 break
-        '''move 구현해야함'''
     def _blitzcrank(self,level,enemies,damage=[250,400,900],stop=False):
         tx,ty = self._find_target(enemies,min=False)
         if (damage[level] - self.hexes[tx,ty,8])/2 < 0 :
@@ -354,14 +434,27 @@ class Skill:
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
         self.hexes[tx,ty,18] = 2
-        '''move 구현해야함'''
+        target = [[-1,0],[1,0],[0,-1],[0,1],[1,1],[-1,-1]]
+        torf = False
+        while torf == False:
+            for t in target:
+                if self.hexes[self.arr[0]+t[0],self.arr[1]+t[1],0] == 0:
+                    self.hexes[self.arr[0]+t[0],self.arr[1]+t[1],:] = \
+                        self.hexes[tx,ty,:]
+                    self.hexes[tx,ty,:] = 0
+                    self.maxhexes[self.arr[0]+t[0],self.arr[1]+t[1],:] = \
+                        self.maxhexes[tx,ty,:]
+                    self.maxhexes[tx,ty,:] = 0
+                    print(self.hexes[self.arr[0]+t[0],self.arr[1]+t[1],0])
+                    torf = True
+                    break
     def _annie(self,level,enemies,damage=[150,200,300],shield=[270,360,540],stop=False):
         if stop:
             self.hexes[self.arr[0],self.arr[1],25] = 0
         else:
             self.hexes[self.arr[0],self.arr[1],25] += shield[level]/2
             self.hexes[self.arr[0],self.arr[1],26] = 9
-        '''damage 나중에 원뿔?'''
+            tx,ty = self._find_target(enemies)
     def _ahri(self,level,enemies,damage=[175,250,375],stop=False):
         '''damage 나중에 각도?'''
     def _vi(self,level,enemies,damage=[400,600,1200],knock=[150,200,500],

@@ -169,7 +169,8 @@ class Fight:
             self.skill.arr = arr
             if demolitionist:
                 self.skill.demol = arr
-            hexes,torf = self.skill.cast(opp)
+            hexes,torf,start_hexes = self.skill.cast(opp)
+            self.start_hexes = start_hexes
             if torf:
                 self._one_champ_tic(hexes,attack_range,arr,you,opp,enemies,tic,
                     sniper=sniper,pirate=pirate,void=void,starguard=starguard,

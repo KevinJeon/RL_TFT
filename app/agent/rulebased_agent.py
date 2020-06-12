@@ -12,7 +12,8 @@ class RulebasedAgent(object):
                 else:
                     synergy[str(syn)] += 1
         return synergy
-    def bef_action(money,player_level,five_champs,five_cost,total_units,life=None):
+    def bef_action(money,player_level,five_champs,five_cost,total_units,unit_number,
+        life=None):
         synergy = RulebasedAgent._synergy(total_units)
         sorted_syns = sorted(synergy.items(),key=operator.itemgetter(0))
         if len(sorted_syns) > 3:
@@ -26,7 +27,7 @@ class RulebasedAgent(object):
         if (money < 4) or (player_level == 9):
             ind = a.index(8)
             del a[ind]
-        if len(total_units) >= player_level + 9:
+        if unit_number >= player_level + 9:
             ind = a.index(0)
             del a[ind]
             ind = a.index(1)

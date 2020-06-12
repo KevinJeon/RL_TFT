@@ -1,6 +1,6 @@
 import numpy as np
 class RandomAgent:
-    def bef_action(money,player_level,five_champs,five_cost,total_units):
+    def bef_action(money,player_level,five_champs,five_cost,total_units,unit_number):
         a = list(range(9))
         if money < 2:
             ind = a.index(7)
@@ -8,7 +8,7 @@ class RandomAgent:
         if (money < 4) or (player_level == 9):
             ind = a.index(8)
             del a[ind]
-        if len(total_units) >= player_level + 9:
+        if unit_number >= player_level + 9:
             ind = a.index(0)
             del a[ind]
             ind = a.index(1)

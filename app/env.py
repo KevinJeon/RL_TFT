@@ -121,10 +121,12 @@ class TFT_env:
             print(player.name)
             player.cur_round = self.cur_round
             champ_queues,action_sequence,arrange,num = player.prepare_round()
-            self.jd['action'].append(dict(buysell=action_sequence,arrange=arrange,chosen=num))
-            self.jd['state'].append(dict(xp=player.xp,money=player.money,wait=player.wait_num,
-                fight=player.fight_num,synergy=player.fight_synergy,life=player.life,
-                continuous=player.continuous))
+            self.jd['action'].append(dict(buysell=np.array(action_sequence).tolist(),
+                arrange=np.array(arrange).tolist(),chosen=np.array(num).tolist()))
+            print(player.wait_num)
+            self.jd['state'].append(dict(xp=player.xp,money=int(player.money),
+                wait=player.wait_num,fight=player.fight_num,synergy=player.fight_synergy,
+                life=player.life,continuous=player.continuous))
             for champ,count in champ_queues:
                 if champ == None:
                     continue

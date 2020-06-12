@@ -38,6 +38,10 @@ class Player:
         self.five_champs = [True]*5
         self.five_cost = [0]*5
         self.player_synergy = dict()
+    def _count_units(self):
+        self.unit_number = 0
+        for k,i in self.total_units.items():
+            self.unit_number += i['count']
     def _champ_queue(self):
         self.five_champs,self.five_cost = [],[]
         tofill = 5
@@ -55,7 +59,6 @@ class Player:
                 if sum(cnts) == 0:
                     continue
                 prob = [c/sum(cnts) for c in cnts]
-                print('champ cnts',cnts)
                 #print('n_champs : {}, removal {}, star {}'.format(n_champs,self.removal,star))
                 champs = np.random.choice(candidates,size=star,p=prob)
                 self.five_champs += [n_champs[c] for c in champs]
@@ -214,6 +217,7 @@ class Player:
         units,syns = [],[]
         self.fight_num,self.fight_infos = [],[]
         self.fight_items,self.fight_units = [],[]
+        self.wait_num = []
         for k,i in self.total_units.items():
             for n in range(i['count']):
                 info = i['info']
@@ -231,10 +235,10 @@ class Player:
                 chosen = np.random.choice(len(units),self.player_level,replace=False)
             else:
                 chosen = action(avail_units,syns)
-            for i,t in enumerate(self.total_units):
+            for i,n in enumerate(self.fight_num):
                 if i in chosen:
                     continue
-                self.wait_num.append(units[i])
+                self.wait_num.append(self.fight_num[i])
             self.fight_units = [units[c] for c in chosen]
             self.fight_synergy = [syns[c] for c in chosen]
             self.fight_infos = [self.fight_infos[c] for c in chosen]
@@ -271,18 +275,18 @@ class Player:
         action_sequence = []
         while self.is_prepared != True:
             act = self.agent.bef_action(self.money,self.player_level,self.five_champs,
-                self.five_cost,self.total_units)
+                self.five_cost,self.total_units,self.unit_number)
             action_sequence.append(act)
             #print(act)
             #print(self.act1_spc[act])
             champ_queue = self._before_fight(act)
             champ_queues.append(champ_queue)
-
             if act == 5:
                 self.is_prepared = True
                 self._rearrange(action=self.agent.rearr_action)
                 self._assign_item()
                 self._update_synergy()
+        self._count_units()
         return champ_queues,action_sequence,self.fight_arrange,self.fight_num
     def result(self,result):
         msg = ('-----------------------\n'+\
