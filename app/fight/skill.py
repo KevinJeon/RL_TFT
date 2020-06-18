@@ -396,6 +396,16 @@ class Skill:
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
         dx,dy = np.sign(self.arr[0] - tx),np.sign(self.arr[1] - ty)
+        move = [(-1,0),(-1,-1),(0,-1),(1,0),(1,1),(0,1)]
+        if self.hexes[self.arr[0]+dx,self.arr[1]+dy,0] != 0:
+            1 == 1
+        else:
+            self.hexes[self.arr[0]+dx,self.arr[1]+dy,:] = \
+                self.hexes[self.arr[0],self.arr[1],:]
+            self.hexes[self.arr[0],self.arr[1],:] = 0
+            self.maxhexes[self.arr[0]+dx,self.arr[1]+dy,:] = \
+                self.maxhexes[self.arr[0],self.arr[1],:]
+            self.maxhexes[self.arr[0],self.arr[1],:] = 0
     def _kaisa(self,level,enemies,hit=[4,6,9],stop=False):
         tiles = np.tile(np.array(self.arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
@@ -445,7 +455,6 @@ class Skill:
                     self.maxhexes[self.arr[0]+t[0],self.arr[1]+t[1],:] = \
                         self.maxhexes[tx,ty,:]
                     self.maxhexes[tx,ty,:] = 0
-                    print(self.hexes[self.arr[0]+t[0],self.arr[1]+t[1],0])
                     torf = True
                     break
     def _annie(self,level,enemies,damage=[150,200,300],shield=[270,360,540],stop=False):
@@ -455,8 +464,49 @@ class Skill:
             self.hexes[self.arr[0],self.arr[1],25] += shield[level]/2
             self.hexes[self.arr[0],self.arr[1],26] = 9
             tx,ty = self._find_target(enemies)
-    def _ahri(self,level,enemies,damage=[175,250,375],stop=False):
-        '''damage 나중에 각도?'''
+            eneind = self.hexes[enemies[0][0],enemies[0][1],0]
+            txh,tyh =  tx + int(round(ty/2+0.001)),ty
+            axh,ayh = self.arr[0]+int(round(self.arr[1]/2+0.001)),self.arr[1]
+            move = [(-1,0),(-1,-1),(0,-1),(1,0),(1,1),(0,1)]
+            move2 = [(-2,0),(-2,-2),(0,-2),(2,0),(2,2),(0,2)]
+            move3 = [(-2,-1),(-1,-2),(1,-1),(2,1),(1,2),(-1,1)]
+            diff = (axh-txh,ayh-tyh)
+            corn = []
+            if (diff in move):
+                ind = move.index(diff)
+            elif (diff in move2):
+                ind = move2.index(diff)
+            elif diff in move3:
+                ind = move3.index(diff)
+            else:
+                print(diff)
+            leftright = [-1,1]
+            dir = np.random.choice(leftright,1)[0]
+            if dir + ind > 7:
+                ind2 = 0
+            else:
+                ind2 = dir + ind
+            dir2 = np.array(list(move[ind2]))
+            dir1 = np.array(list(move[ind]))
+            corn = [dir1,dir1*2,dir2,dir2*2,dir1+dir2]
+            corn_h = [[axh+d[0],ayh+d[1]] for d in corn]
+            corn_xy = [[h[0]-int(round(h[1]/2+0.001)),h[1]] for h in corn_h]
+            for xy in corn_xy:
+                if self.hexes[xy[0],xy[1],0] == eneind:
+                    if (damage[level] - self.hexes[xy[0],xy[1],8])/2 < 0 :
+                        1 == 1
+                    else:
+                        self.hexes[xy[0],xy[1],2] -= \
+                            (damage[level] - self.hexes[xy[0],xy[1],8])
+
+
+    def _ahri(self,level,enemies,damage=[175*3,250*3,375*3],stop=False):
+        '''타겟 스킬 대신 2배 늘려줌'''
+        tx,ty = self._find_target(enemies)
+        if (damage[level] - self.hexes[tx,ty,8])/2 < 0 :
+            1 == 1
+        else:
+            self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
     def _vi(self,level,enemies,damage=[400,600,1200],knock=[150,200,500],
             stun=[4,5,6],stop=False):
         tx,ty = self._find_target(enemies,min=False)
