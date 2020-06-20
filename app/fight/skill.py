@@ -35,13 +35,14 @@ class Skill:
         self.fly = 0
         self.syndra = 0
     def _find_target(self,enemies,min=True):
-        tiles = np.tile(np.array(self.arr),(len(enemies),1))
-        dist = np.max(abs(tiles-enemies),axis=1)
-        nearest_dist = np.min(dist)
-        if min:
-            ind = np.argmin(dist)
-        if max:
-            ind = np.argmax(dist)
+        sth = [self.arr[0]+int(round(self.arr[1]/2+0.001)),self.arr[1]]
+        sth = np.tile(np.array(sth),(len(enemies),1))
+        enh = [[en[0]+int(round(en[1]/2+0.001)),en[1]] for en in enemies]
+        d_list = []
+        for st,en in zip(sth,enh):
+            d = np.max([abs(st[0]-en[0]),abs(st[1]-en[1]),abs(st[0]-en[0]-(st[1]-en[1]))])
+            d_list.append(d)
+        ind = np.argmin(d_list)
         tx,ty = enemies[ind]
         return int(tx),int(ty)
     def _boundary(self,x,y,d1,d2):
@@ -123,15 +124,18 @@ class Skill:
             for i in range(6):
                 count = 0
                 xy = []
-                card = np.array(self.arr) + np.array(card_move[i])
+                axh,ayh = self.arr[0]+int(round(self.arr[1]/2+0.001)),self.arr[1]
+                card = np.array([axh,ayh]) + np.array(card_move[i])
+                orig = [int(card[0]-round(card[1]/2+0.001)),card[1]]
                 while True:
-                    if (card[0] < 0) or (card[0] > 6) or (card[1] < 0) or \
-                        (card[1] > 7):
+                    orig = [int(card[0]-round(card[1]/2+0.001)),card[1]]
+                    if (orig[0] < 0) or (orig[0] > 6) or (orig[1] < 0) or \
+                        (orig[1] > 7):
                         dir_count.append(count)
                         break
-                    if self.hexes[card[0],card[1],0] == eneind:
+                    if self.hexes[orig[0],orig[1],0] == eneind:
                         count += 1
-                    xy.append(copy.deepcopy(card))
+                    xy.append(copy.deepcopy(orig))
                     card += np.array(card_move[i])
                 card_xy.append(xy)
             target = np.argmax(count)
@@ -255,17 +259,21 @@ class Skill:
             self.hexes[self.arr[0],self.arr[1],5] - self.hexes[tx,ty,7])/2
         yasuo_move = np.array([[-1,0],[-1,-1],[0,-1],[1,0],[1,1],[0,1]])
         torf = False
+        txh,tyh =  tx + int(round(ty/2+0.001)),ty
         while torf ==False:
             for yasuo in yasuo_move:
-                if self.hexes[tx+yasuo[0],ty+yasuo[1],0] == 0:
-                    self.hexes[tx+yasuo[0],ty+yasuo[1],:] = \
-                        self.hexes[self.arr[0],self.arr[1],:]
+                mxh,myh = txh+yasuo[0],tyh+yasuo[1]
+                orig = [int(mxh-round(myh/2+0.001)),myh]
+                if (orig[0] < 0) or (orig[0] > 6) or (orig[1] < 0) or (orig[1] > 7):
+                    continue
+                elif self.hexes[orig[0],orig[1],0] == 0:
+                    self.hexes[orig[0],orig[1],:] = self.hexes[self.arr[0],self.arr[1],:]
                     self.hexes[self.arr[0],self.arr[1],:] = 0
-                    self.maxhexes[tx+yasuo[0],ty+yasuo[1],:] = \
-                        self.maxhexes[self.arr[0],self.arr[1],:]
+                    self.maxhexes[orig[0],orig[1],:] = self.maxhexes[self.arr[0],self.arr[1],:]
                     self.maxhexes[self.arr[0],self.arr[1],:] = 0
                     torf = True
                     break
+            torf =True
     def _xin_zhao(self,level,enemies,damage=[200,275,375],stop=False):
         if stop:
             tx,ty = self._find_target(self.xin_zhao)
@@ -355,7 +363,6 @@ class Skill:
             self.maxhexes[x1+rakan[0],y1+rakan[1],:] = \
                 self.maxhexes[self.arr[0],self.arr[1],:]
             self.maxhexes[self.arr[0],self.arr[1],:] = 0
-            print('Rakan',rakan,self.maxhexes[x1+rakan[0],y1+rakan[1],1])
     def _mordekaiser(self,level,enemies,shield=[350,500,800],damage=[50,75,125],stop=False):
         if stop:
             if self.hexes[self.arr[0],self.arr[1],25] < 0:
@@ -395,17 +402,24 @@ class Skill:
             1 == 1
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
-        dx,dy = np.sign(self.arr[0] - tx),np.sign(self.arr[1] - ty)
-        move = [(-1,0),(-1,-1),(0,-1),(1,0),(1,1),(0,1)]
-        if self.hexes[self.arr[0]+dx,self.arr[1]+dy,0] != 0:
-            1 == 1
-        else:
-            self.hexes[self.arr[0]+dx,self.arr[1]+dy,:] = \
-                self.hexes[self.arr[0],self.arr[1],:]
-            self.hexes[self.arr[0],self.arr[1],:] = 0
-            self.maxhexes[self.arr[0]+dx,self.arr[1]+dy,:] = \
-                self.maxhexes[self.arr[0],self.arr[1],:]
-            self.maxhexes[self.arr[0],self.arr[1],:] = 0
+        axh,ayh = self.arr[0]+int(round(self.arr[1]/2+0.001)),self.arr[1]
+        move = [[-1,0],[-1,-1],[0,-1],[1,0],[1,1],[0,1]]
+        n = 0
+        while True:
+            if n >= len(move):
+                break
+            mxh,myh = axh+move[n][0],ayh+move[n][1]
+            mx,my = mxh - int(round(myh/2+0.001)),myh
+            if (mx < 0) or (mx > 6) or (my < 0) or (my > 7):
+                n+=1
+                continue
+            elif self.hexes[mx,my,0] == 0:
+                self.hexes[mx,my,:] = self.hexes[self.arr[0],self.arr[1],:]
+                self.hexes[self.arr[0],self.arr[1],:] = 0
+                self.maxhexes[mx,my,:] = self.maxhexes[self.arr[0],self.arr[1],:]
+                self.maxhexes[self.arr[0],self.arr[1],:] = 0
+                break
+            n+=1
     def _kaisa(self,level,enemies,hit=[4,6,9],stop=False):
         tiles = np.tile(np.array(self.arr),(len(enemies),1))
         dist = np.max(abs(tiles-enemies),axis=1)
@@ -446,14 +460,18 @@ class Skill:
         self.hexes[tx,ty,18] = 2
         target = [[-1,0],[1,0],[0,-1],[0,1],[1,1],[-1,-1]]
         torf = False
+        axh,ayh =  self.arr[0] + int(round(self.arr[1]/2+0.001)),self.arr[1]
         while torf == False:
             for t in target:
-                if self.hexes[self.arr[0]+t[0],self.arr[1]+t[1],0] == 0:
-                    self.hexes[self.arr[0]+t[0],self.arr[1]+t[1],:] = \
-                        self.hexes[tx,ty,:]
+                mxh,myh = axh+t[0],ayh+t[1]
+                orig = np.array([int(mxh-round(myh/2+0.001)),myh])
+                if (orig[0] < 0) or (orig[0] > 6) or (orig[1] < 0) or \
+                    (orig[1] > 7):
+                    continue
+                elif self.hexes[orig[0],orig[1],0] == 0:
+                    self.hexes[orig[0],orig[1],:] = self.hexes[tx,ty,:]
                     self.hexes[tx,ty,:] = 0
-                    self.maxhexes[self.arr[0]+t[0],self.arr[1]+t[1],:] = \
-                        self.maxhexes[tx,ty,:]
+                    self.maxhexes[orig[0],orig[1],:] = self.maxhexes[tx,ty,:]
                     self.maxhexes[tx,ty,:] = 0
                     torf = True
                     break
@@ -480,9 +498,10 @@ class Skill:
                 ind = move3.index(diff)
             else:
                 print(diff)
+            print('annie',tx,ty,enemies,self.arr)
             leftright = [-1,1]
             dir = np.random.choice(leftright,1)[0]
-            if dir + ind > 7:
+            if dir + ind > 5:
                 ind2 = 0
             else:
                 ind2 = dir + ind
@@ -492,14 +511,14 @@ class Skill:
             corn_h = [[axh+d[0],ayh+d[1]] for d in corn]
             corn_xy = [[h[0]-int(round(h[1]/2+0.001)),h[1]] for h in corn_h]
             for xy in corn_xy:
-                if self.hexes[xy[0],xy[1],0] == eneind:
+                if (xy[0] < 0) or (xy[0] > 6) or (xy[1] < 0) or (xy[1] > 7):
+                    continue
+                elif self.hexes[xy[0],xy[1],0] == eneind:
                     if (damage[level] - self.hexes[xy[0],xy[1],8])/2 < 0 :
                         1 == 1
                     else:
                         self.hexes[xy[0],xy[1],2] -= \
                             (damage[level] - self.hexes[xy[0],xy[1],8])
-
-
     def _ahri(self,level,enemies,damage=[175*3,250*3,375*3],stop=False):
         '''타겟 스킬 대신 2배 늘려줌'''
         tx,ty = self._find_target(enemies)
@@ -507,8 +526,8 @@ class Skill:
             1 == 1
         else:
             self.hexes[tx,ty,2] -= (damage[level] - self.hexes[tx,ty,8])/2
-    def _vi(self,level,enemies,damage=[400,600,1200],knock=[150,200,500],
-            stun=[4,5,6],stop=False):
+    def _vi(self,level,enemies,damage=[400,600,1200],knock=[150,200,500],\
+        stun=[4,5,6],stop=False):
         tx,ty = self._find_target(enemies,min=False)
         enemy = self.hexes[enemies[0][0],enemies[0][1],0]
         x1,y1,x2,y2 = self._boundary(tx,ty,-1,2)
@@ -717,8 +736,8 @@ class Skill:
         '''wait_unit 빈 곳 배치 해야함'''
     def _miss_fortune(self,level,enemies,damage=[0.6,0.8,9.99],stop=False):
         '''damage 나중에 원뿔?'''
-    def _lulu(self,level,enemies,num=[2,4,12],bonus=[0.05,0.1,0.25],stun=[6,6,16],
-        stop=False):
+    def _lulu(self,level,enemies,num=[2,4,12],bonus=[0.05,0.1,0.25],\
+    stun=[6,6,16],stop=False):
         if stop:
             for tx,ty,_ in self.lulu:
                 self.hexes[tx,ty,7] += bonus[level]*self.hexes[tx,ty,7]

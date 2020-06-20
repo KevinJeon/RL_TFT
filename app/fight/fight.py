@@ -474,7 +474,7 @@ class Fight:
         self.gui.infos = infos
         self.gui.update_champs(self.gui.game,infos)
         self.gui.root.update()
-        time.sleep(0.2)
+        time.sleep(0.02)
     def view(self):
         sefl.gui.root.mainloop()
     def infos(self):

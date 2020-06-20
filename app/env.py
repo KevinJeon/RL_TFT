@@ -187,7 +187,7 @@ class TFT_env:
                 result,life_change = fight.fight(gui=gui)
                 if gui:
                     fight.gui.root.destroy()
-                time.sleep(1)
+                time.sleep(0.001)
                 print('finish fight!')
                 if result:
                     a2.life -= life_change

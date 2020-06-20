@@ -20,7 +20,8 @@ def a_star(hexes,st,en):
         minval = np.min(f_list)
         candidates = np.where(f_list==minval)
         near = np.random.choice(candidates[0],1)[0]
-        orig = np.array([int(move[near][0]+sth[0]-round(sth[1]/2+0.001)),sth[1]+move[near][1]])
+        mxh,myh = move[near][0]+sth[0],sth[1]+move[near][1]
+        orig = np.array([int(mxh-round(myh/2+0.001)),myh])
         if np.sum(f_list) == 6000:
             return [0,0]
         elif (orig[0] < 0) or (orig[0] > 6) or (orig[1] < 0) or (orig[1] > 7):

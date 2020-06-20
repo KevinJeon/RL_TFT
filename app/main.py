@@ -36,7 +36,7 @@ def main(champ_state_info=None):
     env.agent8 = agent8
     env.init_game()
     while len(env.players) > 1:
-        env.play_round(gui=False)
+        env.play_round(gui=True)
     return env.final_place,env.jd
 if __name__ == '__main__':
     with open('result.json','r') as f:
